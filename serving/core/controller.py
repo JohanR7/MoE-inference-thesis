@@ -54,5 +54,9 @@ class Controller():
                     com_cycle,
                 )
                 self.end_dict[sys] = id
-            return {'sys': sys, 'id': id, 'cycle': cycle}
+            # ``cycle`` is the current time and ``com_cycle`` that time minus all
+            # GPU compute so far: both are cumulative since the run started.
+            # 'exposed' is new: serving/__main__.py turns consecutive reports of the
+            # same NPU into per-batch compute / non-compute time (--iteration-output).
+            return {'sys': sys, 'id': id, 'cycle': cycle, 'exposed': com_cycle}
         return

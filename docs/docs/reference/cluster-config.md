@@ -177,6 +177,7 @@ Three rules the table cannot show:
 | `pp_size` | int | `1` | Pipeline-parallel degree |
 | `ep_size` | int | `tp_size` (MoE) / `1` (dense) | Expert-parallel degree |
 | `dp_group` | string \| null | `null` | Group ID. Instances with the same string share experts via cross-instance ALLTOALL |
+| `ep_hardware` | list of string \| null | `null` | One hardware name per local EP rank. Each rank's MoE latency comes from `profiler/perf/<name>/` instead of the instance's `hardware`; dense and attention layers still use `hardware`. The variant (dtype) must exist for every name |
 
 **Constraints:**
 

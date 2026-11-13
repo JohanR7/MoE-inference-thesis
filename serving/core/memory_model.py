@@ -26,7 +26,8 @@ class MemoryModel():
     an allocation that cannot be satisfied says so in the call that asks.
     """
 
-    def __init__(self, model, instance_id, node_id, num_npus, tp_size, npu_mem, cpu_mem, block_size, fp, enable_prefix_caching, enable_prefix_sharing, prefix_pool, prefix_storage, cxl_mem=0, ep_size=1, pp_size=1, kv_cache_dtype='auto', npu_memory_utilization=1.0):
+    def __init__(self, model, instance_id, node_id, num_npus, tp_size, npu_mem, cpu_mem, block_size, fp, enable_prefix_caching, enable_prefix_sharing, prefix_pool, prefix_storage, cxl_mem=0, ep_size=1, pp_size=1, kv_cache_dtype='auto', npu_memory_utilization=1.0,
+                 expert_memory_fraction=1.0):  # new: 1.0 = all experts resident (the original behaviour)
         self.model = model
         self.node_id = node_id
         self.instance_id = instance_id
@@ -34,6 +35,9 @@ class MemoryModel():
         self.tp_size = tp_size
         self.pp_size = pp_size
         self.ep_size = ep_size
+        # Share of a rank's expert weights it keeps on the NPU; the rest live
+        # in host memory and are fetched on a miss (see expert_placement).
+        self.expert_memory_fraction = expert_memory_fraction
         self.npu_mem = npu_mem * GB_TO_BYTE # GB -> Byte
         self.cpu_mem = cpu_mem * GB_TO_BYTE # GB -> Byte
         self.cxl_mem = cxl_mem * GB_TO_BYTE
@@ -196,7 +200,16 @@ class MemoryModel():
         block_weight += ln_w  # post layernorm (same weight size)
         if self.is_moe:
             _, moe_w, _ = calculate_sizes(self.model, 'moe', 1, parallel=ep, fp=fp)
-            block_weight += moe_w
+            # The router gate is replicated and always resident; only the
+            # experts themselves are budgeted.
+            # Expert count: Mixtral-style configs say num_local_experts, Qwen-style num_experts
+            num_experts = self.config.get('num_local_experts', self.config.get('num_experts'))
+            # Router (gate) weight: hidden_size x num_experts, the same formula calculate_sizes uses
+            gate_w = self.config['hidden_size'] * num_experts * fp
+            # moe_w = gate + this rank's experts, so (moe_w - gate_w) is the experts alone.
+            # Count only the budgeted share of them; int() keeps byte counts whole
+            # (at fraction 1.0 this equals moe_w exactly, i.e. the old behaviour).
+            block_weight += gate_w + int((moe_w - gate_w) * self.expert_memory_fraction)
         else:
             _, ffn1_w, _ = calculate_sizes(self.model, 'gate_up_proj', 1, parallel=tp, fp=fp)
             block_weight += ffn1_w

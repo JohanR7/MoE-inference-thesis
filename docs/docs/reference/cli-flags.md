@@ -46,7 +46,29 @@ matching runtime knobs per `instances[i]`; see
 | Flag | Choices | Default | Description |
 | --- | --- | --- | --- |
 | `--request-routing-policy` | `LOAD` / `RR` / `RAND` / `CUSTOM` | `LOAD` | Cross-instance request routing |
-| `--expert-routing-policy` | `BALANCED` / `RR` / `RAND` / `CUSTOM` | `BALANCED` | MoE expert token routing |
+| `--expert-routing-policy` | `BALANCED` / `RR` / `RAND` / `TRACE` / `CUSTOM` | `BALANCED` | MoE expert token routing. `TRACE` replays `--expert-routing-trace` and disables block copy |
+| `--expert-routing-trace` | path | none | Routing trace (`.npz`) for `TRACE`, captured from the same workload as `--dataset` |
+| `--expert-placement-policy` | `EVEN` / `POPULARITY` / `SWAP` / `DSA` / `CUSTOM` | `EVEN` | Expert to EP rank placement, recomputed from earlier iterations' routing. A moved expert is loaded from host memory on its new rank |
+| `--expert-placement-interval` | int | `1` | Re-place every N iterations; load is tracked every iteration |
+| `--expert-placement-max-swaps` | int | `1` | `SWAP`: most hot/cold expert swaps per layer per re-placement |
+| `--charge-expert-migration` | bool | `True` | Charge a weight load per moved expert. `--no-charge-expert-migration` makes moves free, to bound what placement can gain |
+| `--expert-memory-fraction` | float | `1.0` | Share of each EP rank's expert weights (full precision) that fits on the NPU. Below 1, the rest stay in host memory, a miss is fetched at `cpu_mem.mem_bw`, and the freed memory goes to KV cache. Needs per-token routing (not `BALANCED`) |
+| `--expert-residency-policy` | `LRU` / `FREQUENCY` / `QUANTIZED` / `HOBBIT` / `DSA` / `CUSTOM` | `LRU` | Which experts stay on the NPU: a reactive LRU cache at full precision; `FREQUENCY`, which evicts the lowest observed load and refills each rank with its highest-load experts every re-placement; or user-defined tiers `FULL` / `REDUCED` / `HOST` |
+| `--expert-reduced-bytes` | float | `0.5` | Size of a `REDUCED` expert relative to full |
+| `--expert-reduced-latency` | float | `1.0` | Compute time of a `REDUCED` expert relative to the profiled one (1.0 until profiled) |
+| `--hobbit-t1` | float | `0.6` | HOBBIT baseline: unimportance threshold above which a token's expert runs at low precision |
+| `--hobbit-high-cache` | float | `0.75` | HOBBIT baseline: share of the expert memory budget for the high-precision cache; the rest holds low-precision copies |
+| `--dsa-alpha` | float | `0.3` | DSA: EWMA smoothing factor |
+| `--dsa-hedge-eta` | float | `1.0` | DSA: Hedge learning rate |
+| `--dsa-horizon` | int | `20` | DSA: iterations a new placement is expected to last |
+| `--dsa-switch-threshold-ns` | float | `100000` | DSA: minimum net gain to migrate (ns) |
+| `--dsa-bands` | `F,R,E` | `0.7,0.3,0.1` | DSA: sensitivity thresholds for FULL, REDUCED, evict |
+| `--dsa-max-imbalance` | float | `0.0` | DSA: a GPU may own up to (1 + x) times its even share of experts (within its memory at REDUCED size); needs DSA residency |
+| `--dsa-quality-fill` | bool | `False` | DSA: spend spare expert memory on FULL precision, not only on residency |
+| `--expert-prefetch-policy` | `NONE` / `ORACLE` / `CUSTOM` | `NONE` | Load experts of the next layer ahead of time. `ORACLE` uses the next layer's real routing (perfect-predictor bound, `TRACE` only) |
+| `--expert-prefetch-accuracy` | float | `1.0` | `ORACLE`: probability each correct expert is kept; the rest are swapped for wrong ones |
+| `--expert-placement-overhead` | `measured` / ns | `measured` | Time charged to an iteration whose placement was recomputed |
+| `--moe-rank-cost` | `tokens` / `pairs` | `tokens` | Token count an EP rank's MoE latency is looked up with. `pairs` = local (token, expert) pairs / top-k; not yet validated against vLLM |
 | `--enable-block-copy` **(per-instance)** | bool | `True` | Replay one block's trace across layers (set False for per-layer EP variance) |
 
 ## Precision
@@ -74,6 +96,7 @@ matching runtime knobs per `instances[i]`; see
 | `--dataset` | path | `None` | JSONL workload file. See **[Workloads → JSONL format](/docs/workloads/jsonl-format)** |
 | `--num-reqs` | int | `0` | Entries to load from the dataset (`0` = all). For agentic, each entry is a session |
 | `--output` | path | `None` | Per-request CSV output path. Stdout only if `None`. The literal `{run_id}` is replaced with the active run id |
+| `--iteration-output` | path | `None` | Per-iteration CSV: one row per NPU per batch with compute and non-compute time, batch shape and expert weight traffic. `{run_id}` is replaced as in `--output` |
 
 ## Run isolation
 

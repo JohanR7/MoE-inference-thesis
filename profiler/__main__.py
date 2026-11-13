@@ -109,6 +109,15 @@ def _add_common_flags(p: argparse.ArgumentParser) -> None:
                    dest="max_num_seqs",
                    help="Max concurrent sequences. Matches vLLM's own "
                         "``--max-num-seqs``. Default: 256.")
+    p.add_argument("--gpu-memory-utilization", type=float, default=None,
+                   dest="gpu_memory_utilization",
+                   help="Fraction of GPU memory vLLM may use. Lower it on "
+                        "small or shared GPUs (vLLM refuses to start when "
+                        "less than this fraction is free). Default: 0.9.")
+    p.add_argument("--attention-backend", default=None,
+                   dest="attention_backend",
+                   help="Force vLLM's attention backend (e.g. TRITON_ATTN, "
+                        "FLASHINFER). Default: vLLM's automatic choice.")
 
     # Attention grid.
     p.add_argument("--attention-max-kv", type=int, default=16384,
@@ -321,6 +330,8 @@ def _build_profile_args(
         kv_cache_dtype=ns.kv_cache_dtype,
         max_num_batched_tokens=ns.max_num_batched_tokens,
         max_num_seqs=ns.max_num_seqs,
+        gpu_memory_utilization=ns.gpu_memory_utilization,
+        attention_backend=ns.attention_backend,
         attention_max_kv=ns.attention_max_kv,
         attention_chunk_factor=ns.attention_chunk_factor,
         attention_kv_factor=ns.attention_kv_factor,

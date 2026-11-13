@@ -92,6 +92,29 @@ df["ITL_list"] = df["ITL"].apply(ast.literal_eval)
 df["ITL_p50_ms"] = df["ITL_list"].apply(lambda xs: pd.Series(xs).quantile(0.5) / 1e6)
 ```
 
+## Per-iteration CSV
+
+`--iteration-output <path>` writes one row per NPU per batch, built from
+the two numbers ASTRA-Sim reports when an NPU finishes a batch (the
+current time, and that time minus all GPU compute so far).
+
+| Column | Meaning |
+| --- | --- |
+| `instance id`, `npu`, `batch id` | Which NPU finished which batch |
+| `start_ns`, `end_ns`, `duration_ns` | From when the batch was scheduled to when this NPU finished it |
+| `compute_ns` | GPU compute time in that window |
+| `non_compute_ns` | `duration_ns - compute_ns`: communication, memory loads (expert fetches, KV loads) and synchronization waits. Idle time between batches is outside the row |
+| `requests`, `prefill`, `decode`, `tokens` | Batch shape |
+| `expert_loaded_bytes` | Expert weights loaded on demand for this batch: misses, migrations, tier raises |
+| `expert_moved_bytes` | The migration part of the above |
+| `expert_prefetched_bytes` | Expert weights prefetched during this batch |
+| `expert_misses` | Experts fetched on demand |
+| `placement_decision_ns` | Placement/residency decision time charged to this batch |
+
+Batch and expert columns are per batch, so they repeat on every NPU of
+the instance; sum them over one NPU. Sum `compute_ns` over all rows and
+divide by the sum of `duration_ns` for GPU busy share.
+
 ## Standard output (log levels)
 
 The simulator's `--log-level` flag controls how much detail lands on

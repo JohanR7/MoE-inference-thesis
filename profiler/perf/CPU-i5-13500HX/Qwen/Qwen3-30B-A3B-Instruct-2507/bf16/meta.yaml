@@ -1,0 +1,20 @@
+profiler_version: cpu-moe-1.0
+torch_version: '2.10.0+cu128'
+gpu: 'CPU: 13th Gen Intel(R) Core(TM) i5-13500HX'
+cpu_threads: 10
+hardware: CPU-i5-13500HX
+profiled_at: '2026-11-10T18:11:07+00:00'
+architecture: qwen3_moe
+model: Qwen/Qwen3-30B-A3B-Instruct-2507
+variant: bf16
+tp_degrees: [1]
+note: MoE block only (reference PyTorch implementation on CPU); no dense or attention tables
+engine_effective:
+  dtype: bfloat16
+  max_num_batched_tokens: 2048
+  max_num_seqs: 256
+measurement_iterations: 5
+skew_profile:
+  enabled: false
+skew_fit:
+  enabled: false

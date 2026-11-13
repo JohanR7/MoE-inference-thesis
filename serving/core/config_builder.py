@@ -171,8 +171,11 @@ def _resolve_dp_groups(all_instances):
             # EP spans both dimensions (cross-instance ALLTOALL)
             ep_dim = [True, True] if tp0 > 1 else [False, True]
 
-        for m in members:
+        # enumerate (new) gives each member its position in the DP group, which
+        # the trace generator uses to pick that instance's slice of the global EP ranks
+        for dp_rank, m in enumerate(members):
             m["dp_group_size"] = dp_size
+            m["dp_rank"] = dp_rank  # position in the group; owns EP ranks from dp_rank * local_ep
             m["local_ep"] = local_ep
             m["ep_total"] = ep_total
             m["tp_dim"] = tp_dim
@@ -189,6 +192,7 @@ def _resolve_dp_groups(all_instances):
     for inst in all_instances:
         if inst.get("dp_group") is None:
             inst["dp_group_size"] = 1
+            inst["dp_rank"] = 0  # not in a DP group: owns EP ranks 0 .. ep_size - 1
             inst["local_ep"] = inst["ep_size"]
             inst["ep_total"] = inst["ep_size"]
             inst["tp_dim"] = local_dim
@@ -633,6 +637,17 @@ def build_cluster_config(astra_sim, cluster_config_path, enable_local_offloading
 
     # Resolve DP groups across all instances.
     _resolve_dp_groups(total_instances)
+
+    # Heterogeneous EP: ``ep_hardware`` names the GPU behind each local EP
+    # rank, and that rank's experts are costed from its own MoE profile.
+    for inst in total_instances:
+        ep_hw = inst.get("ep_hardware")   # optional cluster-config key, e.g. ["T4", "P100"]
+        # If given, it must be a list with exactly one hardware name per EP rank
+        # this instance runs (each name must also have a profile under profiler/perf/)
+        if ep_hw is not None and (not isinstance(ep_hw, list) or len(ep_hw) != inst["local_ep"]):
+            raise ValueError(
+                f"Instance {inst['instance_id']}: ep_hardware must list one hardware name "
+                f"per local EP rank ({inst['local_ep']}), got {ep_hw!r}")
 
     # Keep collective implementation arity aligned with the final global
     # ASTRA-Sim topology, while preserving the default ring implementation.

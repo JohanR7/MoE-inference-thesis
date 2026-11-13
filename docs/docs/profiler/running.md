@@ -60,6 +60,8 @@ on a single GPU by dividing the model's per-rank shapes via
 | `TP_DEGREES` | `1,2` in `profile.sh` (`--tp` defaults to `1`) | Comma-separated TP degrees. **Must include `1`** (TP-stable layers are profiled once at TP=1 and replicated to other TP folders) |
 | `MAX_NUM_BATCHED_TOKENS` | `2048` | Profiler internally bumps this by `+MSQ` for shot-bypass headroom; subtracted back when recording meta |
 | `MAX_NUM_SEQS` | `256` | Profile with `MSQ > runtime MSQ` so mixed-regime cases at `n = runtime_MSQ` stay feasible |
+| `GPU_MEMORY_UTILIZATION` | `0.9` | Fraction of GPU memory vLLM may use. vLLM refuses to start when less than this is free, so lower it on small or shared GPUs (e.g. `0.75` on a 6 GB laptop GPU that also drives a display) |
+| `ATTENTION_BACKEND` | automatic | Force vLLM's attention backend, e.g. `TRITON_ATTN` on GPUs older than Ampere, where FlashAttention is unavailable |
 
 ## Attention grid
 

@@ -1,0 +1,1794 @@
+[07:10:30] INFO     Model config:                                               
+                    /kaggle/working/t4/configs/model/Qwen/Qwen3-30B-A3B-Instruct
+                    -2507.json (model_type=qwen3_moe → architecture=qwen3_moe)  
+───────── Profiling Qwen/Qwen3-30B-A3B-Instruct-2507 on T4 (qwen3_moe) ─────────
+           INFO     Variant: fp16                                               
+           INFO     TP degrees: [1, 2]                                          
+           INFO     Output root:                                                
+                    /kaggle/working/t4/profiler/perf/T4/Qwen/Qwen3-30B-A3B-Instr
+                    uct-2507/fp16                                               
+           INFO     → TP=1  booting vLLM engine                                 
+[07:12:47] ERROR    Captured vLLM stdio before failure:                         
+                    (EngineCore pid=195) INFO 11-08 07:11:02  Initializing a V1 
+                    LLM engine (v0.19.0) with config:                           
+                    model='/tmp/profiler_model_cw1yugtk',                       
+                    speculative_config=None,                                    
+                    tokenizer='/tmp/profiler_model_cw1yugtk',                   
+                    skip_tokenizer_init=True, tokenizer_mode=auto,              
+                    revision=None, tokenizer_revision=None,                     
+                    trust_remote_code=False, dtype=torch.float16,               
+                    max_seq_len=262144, download_dir=None, load_format=dummy,   
+                    tensor_parallel_size=1, pipeline_parallel_size=1,           
+                    data_parallel_size=1, decode_context_parallel_size=1,       
+                    dcp_comm_backend=ag_rs, disable_custom_all_reduce=False,    
+                    quantization=None, enforce_eager=True,                      
+                    enable_return_routed_experts=False, kv_cache_dtype=auto,    
+                    device_config=cuda,                                         
+                    structured_outputs_config=StructuredOutputsConfig(backend='a
+                    uto', disable_any_whitespace=False,                         
+                    disable_additional_properties=False, reasoning_parser='',   
+                    reasoning_parser_plugin='', enable_in_reasoning=False),     
+                    observability_config=ObservabilityConfig(show_hidden_metrics
+                    _for_version=None, otlp_traces_endpoint=None,               
+                    collect_detailed_traces=None, kv_cache_metrics=False,       
+                    kv_cache_metrics_sample=0.01, cudagraph_metrics=False,      
+                    enable_layerwise_nvtx_tracing=False,                        
+                    enable_mfu_metrics=False, enable_mm_processor_stats=False,  
+                    enable_logging_iteration_details=False), seed=0,            
+                    served_model_name=/tmp/profiler_model_cw1yugtk,             
+                    enable_prefix_caching=False, enable_chunked_prefill=True,   
+                    pooler_config=None, compilation_config={'mode':             
+                    <CompilationMode.NONE: 0>, 'debug_dump_path': None,         
+                    'cache_dir': '', 'compile_cache_save_format': 'binary',     
+                    'backend': 'inductor', 'custom_ops': ['all'],               
+                    'splitting_ops': [], 'compile_mm_encoder': False,           
+                    'cudagraph_mm_encoder': False,                              
+                    'encoder_cudagraph_token_budgets': [],                      
+                    'encoder_cudagraph_max_images_per_batch': 0,                
+                    'compile_sizes': [], 'compile_ranges_endpoints': [2304],    
+                    'inductor_compile_config': {'enable_auto_functionalized_v2':
+                    False, 'size_asserts': False, 'alignment_asserts': False,   
+                    'scalar_asserts': False, 'combo_kernels': True,             
+                    'benchmark_combo_kernel': True}, 'inductor_passes': {},     
+                    'cudagraph_mode': <CUDAGraphMode.NONE: 0>,                  
+                    'cudagraph_num_of_warmups': 0, 'cudagraph_capture_sizes':   
+                    [], 'cudagraph_copy_inputs': False,                         
+                    'cudagraph_specialize_lora': True,                          
+                    'use_inductor_graph_partition': False, 'pass_config':       
+                    {'fuse_norm_quant': True, 'fuse_act_quant': True,           
+                    'fuse_attn_quant': False, 'enable_sp': False,               
+                    'fuse_gemm_comms': False, 'fuse_allreduce_rms': False},     
+                    'max_cudagraph_capture_size': 0, 'dynamic_shapes_config':   
+                    {'type': <DynamicShapesType.BACKED: 'backed'>,              
+                    'evaluate_guards': False, 'assume_32_bit_indexing': False}, 
+                    'local_cache_dir': None, 'fast_moe_cold_start': True,       
+                    'static_all_moe_layers': []}                                
+                    (EngineCore pid=195) INFO 11-08 07:11:03  Injected <class   
+                    'profiler.core.hooks.extension.Extension'> into <class      
+                    'vllm.v1.worker.gpu_worker.Worker'> for extended            
+                    collective_rpc calls ['fire']                               
+                    (EngineCore pid=195) INFO 11-08 07:11:03  world_size=1      
+                    rank=0 local_rank=0                                         
+                    distributed_init_method=tcp://172.19.2.2:38977 backend=nccl 
+                    (EngineCore pid=195) INFO 11-08 07:11:03  rank 0 in world   
+                    size 1 is assigned as DP rank 0, PP rank 0, PCP rank 0, TP  
+                    rank 0, EP rank 0, EPLB rank N/A                            
+                    (EngineCore pid=195) INFO 11-08 07:11:04  Starting to load  
+                    model /tmp/profiler_model_cw1yugtk...                       
+                    (EngineCore pid=195) ERROR 11-08 07:11:05  Cannot use FA    
+                    version 2 is not supported due to FA2 is only supported on  
+                    devices with compute capability >= 8                        
+                    (EngineCore pid=195) INFO 11-08 07:11:05  Using FLASHINFER  
+                    attention backend out of potential backends: ['FLASHINFER', 
+                    'TRITON_ATTN', 'FLEX_ATTENTION'].                           
+                    (EngineCore pid=195) INFO 11-08 07:11:05  Using TRITON      
+                    backend for Unquantized MoE                                 
+                    (EngineCore pid=195) INFO 11-08 07:11:07  Model loading took
+                    2.38 GiB memory and 0.773650 seconds                        
+                    (EngineCore pid=195) WARNING 11-08 07:11:07  Using default  
+                    MoE config. Performance might be sub-optimal! Config file   
+                    not found at                                                
+                    /usr/local/lib/python3.13/dist-packages/vllm/model_executor/
+                    layers/fused_moe/configs/E=128,N=768,device_name=Tesla_T4.js
+                    on                                                          
+                    (EngineCore pid=195) INFO 11-08 07:11:30  Available KV cache
+                    memory: 9.02 GiB                                            
+                    (EngineCore pid=195) INFO 11-08 07:11:30  GPU KV cache size:
+                    4,726,768 tokens                                            
+                    (EngineCore pid=195) INFO 11-08 07:11:30  Maximum           
+                    concurrency for 262,144 tokens per request: 18.03x          
+                    (EngineCore pid=195) INFO 11-08 07:11:30  Warming up        
+                    FlashInfer attention.                                       
+                    (EngineCore pid=195) ERROR 11-08 07:12:44  EngineCore failed
+                    to start.                                                   
+                    (EngineCore pid=195) ERROR 11-08 07:12:44  Traceback (most  
+                    recent call last):                                          
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/local/lib/python3.13/dist-packages/flashinfer/jit/cpp_
+                    ext.py", line 332, in run_ninja                             
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    subprocess.run(                                             
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    ~~~~~~~~~~~~~~^                                             
+                    (EngineCore pid=195) ERROR 11-08 07:12:44          command, 
+                    (EngineCore pid=195) ERROR 11-08 07:12:44          ^^^^^^^^ 
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      ...<4        
+                    lines>...                                                   
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    text=True,                                                  
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    ^^^^^^^^^^                                                  
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      )            
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      ^            
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/lib/python3.13/subprocess.py", line 578, in run       
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      raise        
+                    CalledProcessError(retcode, process.args,                   
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    output=stdout, stderr=stderr)                               
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    subprocess.CalledProcessError: Command '['ninja', '-v',     
+                    '-C',                                                       
+                    '/root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_w
+                    ith_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_
+                    i32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_u
+                    se_logits_cap_False_f16qk_False', '-f',                     
+                    '/root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_w
+                    ith_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_
+                    i32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_u
+                    se_logits_cap_False_f16qk_False/build.ninja']' returned     
+                    non-zero exit status 1.                                     
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    (EngineCore pid=195) ERROR 11-08 07:12:44  The above        
+                    exception was the direct cause of the following exception:  
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    (EngineCore pid=195) ERROR 11-08 07:12:44  Traceback (most  
+                    recent call last):                                          
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/engine/core
+                    .py", line 1082, in run_engine_core                         
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      engine_core =
+                    EngineCoreProc(*args, engine_index=dp_rank, **kwargs)       
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/local/lib/python3.13/dist-packages/vllm/tracing/otel.p
+                    y", line 178, in sync_wrapper                               
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      return       
+                    func(*args, **kwargs)                                       
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/engine/core
+                    .py", line 848, in __init__                                 
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    super().__init__(                                           
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    ~~~~~~~~~~~~~~~~^                                           
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    vllm_config,                                                
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    ^^^^^^^^^^^^                                                
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      ...<3        
+                    lines>...                                                   
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    internal_dp_balancing,                                      
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    ^^^^^^^^^^^^^^^^^^^^^^                                      
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      )            
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      ^            
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/engine/core
+                    .py", line 124, in __init__                                 
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    kv_cache_config = self._initialize_kv_caches(vllm_config)   
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/local/lib/python3.13/dist-packages/vllm/tracing/otel.p
+                    y", line 178, in sync_wrapper                               
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      return       
+                    func(*args, **kwargs)                                       
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/engine/core
+                    .py", line 280, in _initialize_kv_caches                    
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    self.model_executor.initialize_from_config(kv_cache_configs)
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/executor/ab
+                    stract.py", line 118, in initialize_from_config             
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    compilation_times: list =                                   
+                    self.collective_rpc("compile_or_warm_up_model")             
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^             
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/executor/un
+                    iproc_executor.py", line 80, in collective_rpc              
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      result =     
+                    run_method(self.driver_worker, method, args, kwargs)        
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/serial_util
+                    s.py", line 510, in run_method                              
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      return       
+                    func(*args, **kwargs)                                       
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/local/lib/python3.13/dist-packages/vllm/tracing/otel.p
+                    y", line 178, in sync_wrapper                               
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      return       
+                    func(*args, **kwargs)                                       
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/worker/gpu_
+                    worker.py", line 584, in compile_or_warm_up_model           
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    kernel_warmup(self)                                         
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    ~~~~~~~~~~~~~^^^^^^                                         
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/local/lib/python3.13/dist-packages/vllm/model_executor
+                    /warmup/kernel_warmup.py", line 72, in kernel_warmup        
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    worker.model_runner._dummy_run(                             
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^                             
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    num_tokens=16,                                              
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    ^^^^^^^^^^^^^^                                              
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      ...<3        
+                    lines>...                                                   
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    create_mixed_batch=True,                                    
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    ^^^^^^^^^^^^^^^^^^^^^^^^                                    
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      )            
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      ^            
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/local/lib/python3.13/dist-packages/torch/utils/_contex
+                    tlib.py", line 124, in decorate_context                     
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      return       
+                    func(*args, **kwargs)                                       
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/worker/gpu_
+                    model_runner.py", line 5394, in _dummy_run                  
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    attn_metadata, _ = self._build_attention_metadata(          
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^                             
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    num_tokens=num_tokens_unpadded,                             
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                             
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      ...<6        
+                    lines>...                                                   
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    use_spec_decode=self.speculative_config is not None,        
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      )            
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      ^            
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/worker/gpu_
+                    model_runner.py", line 2319, in _build_attention_metadata   
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    _build_attn_group_metadata(kv_cache_gid, attn_gid, cm)      
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^      
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/worker/gpu_
+                    model_runner.py", line 2270, in _build_attn_group_metadata  
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    attn_metadata_i = builder.build(                            
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    common_prefix_len=cascade_attn_prefix_len,                  
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    common_attn_metadata=common_attn_metadata,                  
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    **extra_attn_metadata_args,                                 
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      )            
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/attention/b
+                    ackends/flashinfer.py", line 1109, in build                 
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    prefill_wrapper.plan(                                       
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    ~~~~~~~~~~~~~~~~~~~~^                                       
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    qo_indptr=qo_indptr_prefill_cpu,                            
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                            
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      ...<15       
+                    lines>...                                                   
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    disable_split_kv=self.disable_split_kv,                     
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                     
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      )            
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      ^            
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/local/lib/python3.13/dist-packages/flashinfer/prefill.
+                    py", line 1935, in plan                                     
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    self._cached_module = get_batch_prefill_module(             
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    ~~~~~~~~~~~~~~~~~~~~~~~~^                                   
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    self._backend, *get_module_args                             
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                             
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      )            
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      ^            
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/local/lib/python3.13/dist-packages/flashinfer/prefill.
+                    py", line 414, in get_batch_prefill_module                  
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      module =     
+                    gen_batch_prefill_module(backend, *args).build_and_load()   
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/local/lib/python3.13/dist-packages/flashinfer/jit/core
+                    .py", line 318, in build_and_load                           
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    self.build(verbose, need_lock=False)                        
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^                        
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/local/lib/python3.13/dist-packages/flashinfer/jit/core
+                    .py", line 304, in build                                    
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    run_ninja(self.build_dir, self.ninja_path, verbose)         
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^         
+                    (EngineCore pid=195) ERROR 11-08 07:12:44    File           
+                    "/usr/local/lib/python3.13/dist-packages/flashinfer/jit/cpp_
+                    ext.py", line 344, in run_ninja                             
+                    (EngineCore pid=195) ERROR 11-08 07:12:44      raise        
+                    RuntimeError(msg) from e                                    
+                    (EngineCore pid=195) ERROR 11-08 07:12:44  RuntimeError:    
+                    Ninja build failed. Ninja output:                           
+                    (EngineCore pid=195) ERROR 11-08 07:12:44  ninja: Entering  
+                    directory                                                   
+                    `/root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_w
+                    ith_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_
+                    i32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_u
+                    se_logits_cap_False_f16qk_False'                            
+                    (EngineCore pid=195) ERROR 11-08 07:12:44  [1/11]           
+                    /usr/local/cuda/bin/nvcc                                    
+                    --generate-dependencies-with-compile --dependency-output    
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_1.cuda.o.d -DPy_LIMITED_API=0x03090000                  
+                    -D_GLIBCXX_USE_CXX11_ABI=1 -isystem /usr/include/python3.13 
+                    -isystem /usr/local/cuda/include -isystem                   
+                    /usr/local/cuda/include/cccl -isystem                       
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/incl
+                    ude -isystem                                                
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/csrc
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/include -isystem                                        
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/tools/util/include -isystem                             
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/spdl
+                    og/include --compiler-options=-fPIC --expt-relaxed-constexpr
+                    -static-global-template-stub=false                          
+                    -gencode=arch=compute_75,code=sm_75                         
+                    -DFLASHINFER_ENABLE_FP8_E8M0 -DFLASHINFER_ENABLE_FP4_E2M1   
+                    -std=c++17 --threads=1 -use_fast_math                       
+                    -DFLASHINFER_ENABLE_F16 -DFLASHINFER_ENABLE_BF16            
+                    -DFLASHINFER_ENABLE_FP8_E4M3 -DFLASHINFER_ENABLE_FP8_E5M2   
+                    -DNDEBUG -O3 -c                                             
+                    /root/.cache/flashinfer/0.6.6/75/generated/batch_prefill_wit
+                    h_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i3
+                    2_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_use
+                    _logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_ma
+                    sk_1.cu -o                                                  
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_1.cuda.o                                                
+                    (EngineCore pid=195) ERROR 11-08 07:12:44  [2/11]           
+                    /usr/local/cuda/bin/nvcc                                    
+                    --generate-dependencies-with-compile --dependency-output    
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_0.cuda.o.d -DPy_LIMITED_API=0x03090000                  
+                    -D_GLIBCXX_USE_CXX11_ABI=1 -isystem /usr/include/python3.13 
+                    -isystem /usr/local/cuda/include -isystem                   
+                    /usr/local/cuda/include/cccl -isystem                       
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/incl
+                    ude -isystem                                                
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/csrc
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/include -isystem                                        
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/tools/util/include -isystem                             
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/spdl
+                    og/include --compiler-options=-fPIC --expt-relaxed-constexpr
+                    -static-global-template-stub=false                          
+                    -gencode=arch=compute_75,code=sm_75                         
+                    -DFLASHINFER_ENABLE_FP8_E8M0 -DFLASHINFER_ENABLE_FP4_E2M1   
+                    -std=c++17 --threads=1 -use_fast_math                       
+                    -DFLASHINFER_ENABLE_F16 -DFLASHINFER_ENABLE_BF16            
+                    -DFLASHINFER_ENABLE_FP8_E4M3 -DFLASHINFER_ENABLE_FP8_E5M2   
+                    -DNDEBUG -O3 -c                                             
+                    /root/.cache/flashinfer/0.6.6/75/generated/batch_prefill_wit
+                    h_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i3
+                    2_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_use
+                    _logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_ma
+                    sk_0.cu -o                                                  
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_0.cuda.o                                                
+                    (EngineCore pid=195) ERROR 11-08 07:12:44  [3/11]           
+                    /usr/local/cuda/bin/nvcc                                    
+                    --generate-dependencies-with-compile --dependency-output    
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_1.cuda.o.d -DPy_LIMITED_API=0x03090000                   
+                    -D_GLIBCXX_USE_CXX11_ABI=1 -isystem /usr/include/python3.13 
+                    -isystem /usr/local/cuda/include -isystem                   
+                    /usr/local/cuda/include/cccl -isystem                       
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/incl
+                    ude -isystem                                                
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/csrc
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/include -isystem                                        
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/tools/util/include -isystem                             
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/spdl
+                    og/include --compiler-options=-fPIC --expt-relaxed-constexpr
+                    -static-global-template-stub=false                          
+                    -gencode=arch=compute_75,code=sm_75                         
+                    -DFLASHINFER_ENABLE_FP8_E8M0 -DFLASHINFER_ENABLE_FP4_E2M1   
+                    -std=c++17 --threads=1 -use_fast_math                       
+                    -DFLASHINFER_ENABLE_F16 -DFLASHINFER_ENABLE_BF16            
+                    -DFLASHINFER_ENABLE_FP8_E4M3 -DFLASHINFER_ENABLE_FP8_E5M2   
+                    -DNDEBUG -O3 -c                                             
+                    /root/.cache/flashinfer/0.6.6/75/generated/batch_prefill_wit
+                    h_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i3
+                    2_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_use
+                    _logits_cap_False_f16qk_False/batch_prefill_paged_kernel_mas
+                    k_1.cu -o                                                   
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_1.cuda.o                                                 
+                    (EngineCore pid=195) ERROR 11-08 07:12:44  [4/11]           
+                    /usr/local/cuda/bin/nvcc                                    
+                    --generate-dependencies-with-compile --dependency-output    
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_0.cuda.o.d -DPy_LIMITED_API=0x03090000                   
+                    -D_GLIBCXX_USE_CXX11_ABI=1 -isystem /usr/include/python3.13 
+                    -isystem /usr/local/cuda/include -isystem                   
+                    /usr/local/cuda/include/cccl -isystem                       
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/incl
+                    ude -isystem                                                
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/csrc
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/include -isystem                                        
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/tools/util/include -isystem                             
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/spdl
+                    og/include --compiler-options=-fPIC --expt-relaxed-constexpr
+                    -static-global-template-stub=false                          
+                    -gencode=arch=compute_75,code=sm_75                         
+                    -DFLASHINFER_ENABLE_FP8_E8M0 -DFLASHINFER_ENABLE_FP4_E2M1   
+                    -std=c++17 --threads=1 -use_fast_math                       
+                    -DFLASHINFER_ENABLE_F16 -DFLASHINFER_ENABLE_BF16            
+                    -DFLASHINFER_ENABLE_FP8_E4M3 -DFLASHINFER_ENABLE_FP8_E5M2   
+                    -DNDEBUG -O3 -c                                             
+                    /root/.cache/flashinfer/0.6.6/75/generated/batch_prefill_wit
+                    h_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i3
+                    2_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_use
+                    _logits_cap_False_f16qk_False/batch_prefill_paged_kernel_mas
+                    k_0.cu -o                                                   
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_0.cuda.o                                                 
+                    (EngineCore pid=195) ERROR 11-08 07:12:44  [5/11]           
+                    /usr/local/cuda/bin/nvcc                                    
+                    --generate-dependencies-with-compile --dependency-output    
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_2.cuda.o.d -DPy_LIMITED_API=0x03090000                   
+                    -D_GLIBCXX_USE_CXX11_ABI=1 -isystem /usr/include/python3.13 
+                    -isystem /usr/local/cuda/include -isystem                   
+                    /usr/local/cuda/include/cccl -isystem                       
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/incl
+                    ude -isystem                                                
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/csrc
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/include -isystem                                        
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/tools/util/include -isystem                             
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/spdl
+                    og/include --compiler-options=-fPIC --expt-relaxed-constexpr
+                    -static-global-template-stub=false                          
+                    -gencode=arch=compute_75,code=sm_75                         
+                    -DFLASHINFER_ENABLE_FP8_E8M0 -DFLASHINFER_ENABLE_FP4_E2M1   
+                    -std=c++17 --threads=1 -use_fast_math                       
+                    -DFLASHINFER_ENABLE_F16 -DFLASHINFER_ENABLE_BF16            
+                    -DFLASHINFER_ENABLE_FP8_E4M3 -DFLASHINFER_ENABLE_FP8_E5M2   
+                    -DNDEBUG -O3 -c                                             
+                    /root/.cache/flashinfer/0.6.6/75/generated/batch_prefill_wit
+                    h_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i3
+                    2_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_use
+                    _logits_cap_False_f16qk_False/batch_prefill_paged_kernel_mas
+                    k_2.cu -o                                                   
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_2.cuda.o                                                 
+                    (EngineCore pid=195) ERROR 11-08 07:12:44  [6/11]           
+                    /usr/local/cuda/bin/nvcc                                    
+                    --generate-dependencies-with-compile --dependency-output    
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_2.cuda.o.d -DPy_LIMITED_API=0x03090000                  
+                    -D_GLIBCXX_USE_CXX11_ABI=1 -isystem /usr/include/python3.13 
+                    -isystem /usr/local/cuda/include -isystem                   
+                    /usr/local/cuda/include/cccl -isystem                       
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/incl
+                    ude -isystem                                                
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/csrc
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/include -isystem                                        
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/tools/util/include -isystem                             
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/spdl
+                    og/include --compiler-options=-fPIC --expt-relaxed-constexpr
+                    -static-global-template-stub=false                          
+                    -gencode=arch=compute_75,code=sm_75                         
+                    -DFLASHINFER_ENABLE_FP8_E8M0 -DFLASHINFER_ENABLE_FP4_E2M1   
+                    -std=c++17 --threads=1 -use_fast_math                       
+                    -DFLASHINFER_ENABLE_F16 -DFLASHINFER_ENABLE_BF16            
+                    -DFLASHINFER_ENABLE_FP8_E4M3 -DFLASHINFER_ENABLE_FP8_E5M2   
+                    -DNDEBUG -O3 -c                                             
+                    /root/.cache/flashinfer/0.6.6/75/generated/batch_prefill_wit
+                    h_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i3
+                    2_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_use
+                    _logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_ma
+                    sk_2.cu -o                                                  
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_2.cuda.o                                                
+                    (EngineCore pid=195) ERROR 11-08 07:12:44  [7/11]           
+                    /usr/local/cuda/bin/nvcc                                    
+                    --generate-dependencies-with-compile --dependency-output    
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill.cuda.o.d       
+                    -DPy_LIMITED_API=0x03090000 -D_GLIBCXX_USE_CXX11_ABI=1      
+                    -isystem /usr/include/python3.13 -isystem                   
+                    /usr/local/cuda/include -isystem                            
+                    /usr/local/cuda/include/cccl -isystem                       
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/incl
+                    ude -isystem                                                
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/csrc
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/include -isystem                                        
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/tools/util/include -isystem                             
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/spdl
+                    og/include --compiler-options=-fPIC --expt-relaxed-constexpr
+                    -static-global-template-stub=false                          
+                    -gencode=arch=compute_75,code=sm_75                         
+                    -DFLASHINFER_ENABLE_FP8_E8M0 -DFLASHINFER_ENABLE_FP4_E2M1   
+                    -std=c++17 --threads=1 -use_fast_math                       
+                    -DFLASHINFER_ENABLE_F16 -DFLASHINFER_ENABLE_BF16            
+                    -DFLASHINFER_ENABLE_FP8_E4M3 -DFLASHINFER_ENABLE_FP8_E5M2   
+                    -DNDEBUG -O3 -c                                             
+                    /root/.cache/flashinfer/0.6.6/75/generated/batch_prefill_wit
+                    h_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i3
+                    2_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_use
+                    _logits_cap_False_f16qk_False/batch_prefill.cu -o           
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill.cuda.o         
+                    (EngineCore pid=195) ERROR 11-08 07:12:44  [8/11]           
+                    /usr/local/cuda/bin/nvcc                                    
+                    --generate-dependencies-with-compile --dependency-output    
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_3.cuda.o.d -DPy_LIMITED_API=0x03090000                  
+                    -D_GLIBCXX_USE_CXX11_ABI=1 -isystem /usr/include/python3.13 
+                    -isystem /usr/local/cuda/include -isystem                   
+                    /usr/local/cuda/include/cccl -isystem                       
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/incl
+                    ude -isystem                                                
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/csrc
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/include -isystem                                        
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/tools/util/include -isystem                             
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/spdl
+                    og/include --compiler-options=-fPIC --expt-relaxed-constexpr
+                    -static-global-template-stub=false                          
+                    -gencode=arch=compute_75,code=sm_75                         
+                    -DFLASHINFER_ENABLE_FP8_E8M0 -DFLASHINFER_ENABLE_FP4_E2M1   
+                    -std=c++17 --threads=1 -use_fast_math                       
+                    -DFLASHINFER_ENABLE_F16 -DFLASHINFER_ENABLE_BF16            
+                    -DFLASHINFER_ENABLE_FP8_E4M3 -DFLASHINFER_ENABLE_FP8_E5M2   
+                    -DNDEBUG -O3 -c                                             
+                    /root/.cache/flashinfer/0.6.6/75/generated/batch_prefill_wit
+                    h_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i3
+                    2_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_use
+                    _logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_ma
+                    sk_3.cu -o                                                  
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_3.cuda.o                                                
+                    (EngineCore pid=195) ERROR 11-08 07:12:44  [9/11]           
+                    /usr/local/cuda/bin/nvcc                                    
+                    --generate-dependencies-with-compile --dependency-output    
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_jit_binding.cud
+                    a.o.d -DPy_LIMITED_API=0x03090000 -D_GLIBCXX_USE_CXX11_ABI=1
+                    -isystem /usr/include/python3.13 -isystem                   
+                    /usr/local/cuda/include -isystem                            
+                    /usr/local/cuda/include/cccl -isystem                       
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/incl
+                    ude -isystem                                                
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/csrc
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/include -isystem                                        
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/tools/util/include -isystem                             
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/spdl
+                    og/include --compiler-options=-fPIC --expt-relaxed-constexpr
+                    -static-global-template-stub=false                          
+                    -gencode=arch=compute_75,code=sm_75                         
+                    -DFLASHINFER_ENABLE_FP8_E8M0 -DFLASHINFER_ENABLE_FP4_E2M1   
+                    -std=c++17 --threads=1 -use_fast_math                       
+                    -DFLASHINFER_ENABLE_F16 -DFLASHINFER_ENABLE_BF16            
+                    -DFLASHINFER_ENABLE_FP8_E4M3 -DFLASHINFER_ENABLE_FP8_E5M2   
+                    -DNDEBUG -O3 -c                                             
+                    /root/.cache/flashinfer/0.6.6/75/generated/batch_prefill_wit
+                    h_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i3
+                    2_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_use
+                    _logits_cap_False_f16qk_False/batch_prefill_jit_binding.cu  
+                    -o                                                          
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_jit_binding.cud
+                    a.o                                                         
+                    (EngineCore pid=195) ERROR 11-08 07:12:44  [10/11]          
+                    /usr/local/cuda/bin/nvcc                                    
+                    --generate-dependencies-with-compile --dependency-output    
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_3.cuda.o.d -DPy_LIMITED_API=0x03090000                   
+                    -D_GLIBCXX_USE_CXX11_ABI=1 -isystem /usr/include/python3.13 
+                    -isystem /usr/local/cuda/include -isystem                   
+                    /usr/local/cuda/include/cccl -isystem                       
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/incl
+                    ude -isystem                                                
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/csrc
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/include -isystem                                        
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/tools/util/include -isystem                             
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/spdl
+                    og/include --compiler-options=-fPIC --expt-relaxed-constexpr
+                    -static-global-template-stub=false                          
+                    -gencode=arch=compute_75,code=sm_75                         
+                    -DFLASHINFER_ENABLE_FP8_E8M0 -DFLASHINFER_ENABLE_FP4_E2M1   
+                    -std=c++17 --threads=1 -use_fast_math                       
+                    -DFLASHINFER_ENABLE_F16 -DFLASHINFER_ENABLE_BF16            
+                    -DFLASHINFER_ENABLE_FP8_E4M3 -DFLASHINFER_ENABLE_FP8_E5M2   
+                    -DNDEBUG -O3 -c                                             
+                    /root/.cache/flashinfer/0.6.6/75/generated/batch_prefill_wit
+                    h_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i3
+                    2_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_use
+                    _logits_cap_False_f16qk_False/batch_prefill_paged_kernel_mas
+                    k_3.cu -o                                                   
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_3.cuda.o                                                 
+                    (EngineCore pid=195) ERROR 11-08 07:12:44  [11/11] c++      
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_0.cuda.o                                                 
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_0.cuda.o                                                
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_1.cuda.o                                                 
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_1.cuda.o                                                
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_2.cuda.o                                                 
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_2.cuda.o                                                
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_3.cuda.o                                                 
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_3.cuda.o                                                
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill.cuda.o         
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_jit_binding.cud
+                    a.o -shared -L/usr/local/cuda/lib64                         
+                    -L/usr/local/cuda/lib64/stubs -lcudart -lcuda -o            
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_with_kv_cache_d
+                    type_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i32_head_dim_q
+                    k_128_head_dim_vo_128_posenc_0_use_swa_False_use_logits_cap_
+                    False_f16qk_False.so                                        
+                    (EngineCore pid=195) ERROR 11-08 07:12:44  FAILED:          
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_with_kv_cache_d
+                    type_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i32_head_dim_q
+                    k_128_head_dim_vo_128_posenc_0_use_swa_False_use_logits_cap_
+                    False_f16qk_False.so                                        
+                    (EngineCore pid=195) ERROR 11-08 07:12:44  c++              
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_0.cuda.o                                                 
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_0.cuda.o                                                
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_1.cuda.o                                                 
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_1.cuda.o                                                
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_2.cuda.o                                                 
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_2.cuda.o                                                
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_3.cuda.o                                                 
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_3.cuda.o                                                
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill.cuda.o         
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_jit_binding.cud
+                    a.o -shared -L/usr/local/cuda/lib64                         
+                    -L/usr/local/cuda/lib64/stubs -lcudart -lcuda -o            
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_with_kv_cache_d
+                    type_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i32_head_dim_q
+                    k_128_head_dim_vo_128_posenc_0_use_swa_False_use_logits_cap_
+                    False_f16qk_False.so                                        
+                    (EngineCore pid=195) ERROR 11-08 07:12:44  /usr/bin/ld:     
+                    cannot find -lcuda: No such file or directory               
+                    (EngineCore pid=195) ERROR 11-08 07:12:44  collect2: error: 
+                    ld returned 1 exit status                                   
+                    (EngineCore pid=195) ERROR 11-08 07:12:44  ninja: build     
+                    stopped: subcommand failed.                                 
+                    (EngineCore pid=195) ERROR 11-08 07:12:44                   
+                    (EngineCore pid=195) Process EngineCore:                    
+                    (EngineCore pid=195) Traceback (most recent call last):     
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/flashinfer/jit/cpp_
+                    ext.py", line 332, in run_ninja                             
+                    (EngineCore pid=195)     subprocess.run(                    
+                    (EngineCore pid=195)     ~~~~~~~~~~~~~~^                    
+                    (EngineCore pid=195)         command,                       
+                    (EngineCore pid=195)         ^^^^^^^^                       
+                    (EngineCore pid=195)     ...<4 lines>...                    
+                    (EngineCore pid=195)         text=True,                     
+                    (EngineCore pid=195)         ^^^^^^^^^^                     
+                    (EngineCore pid=195)     )                                  
+                    (EngineCore pid=195)     ^                                  
+                    (EngineCore pid=195)   File                                 
+                    "/usr/lib/python3.13/subprocess.py", line 578, in run       
+                    (EngineCore pid=195)     raise CalledProcessError(retcode,  
+                    process.args,                                               
+                    (EngineCore pid=195)                                        
+                    output=stdout, stderr=stderr)                               
+                    (EngineCore pid=195) subprocess.CalledProcessError: Command 
+                    '['ninja', '-v', '-C',                                      
+                    '/root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_w
+                    ith_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_
+                    i32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_u
+                    se_logits_cap_False_f16qk_False', '-f',                     
+                    '/root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_w
+                    ith_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_
+                    i32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_u
+                    se_logits_cap_False_f16qk_False/build.ninja']' returned     
+                    non-zero exit status 1.                                     
+                    (EngineCore pid=195)                                        
+                    (EngineCore pid=195) The above exception was the direct     
+                    cause of the following exception:                           
+                    (EngineCore pid=195)                                        
+                    (EngineCore pid=195) Traceback (most recent call last):     
+                    (EngineCore pid=195)   File                                 
+                    "/usr/lib/python3.13/multiprocessing/process.py", line 313, 
+                    in _bootstrap                                               
+                    (EngineCore pid=195)     self.run()                         
+                    (EngineCore pid=195)     ~~~~~~~~^^                         
+                    (EngineCore pid=195)   File                                 
+                    "/usr/lib/python3.13/multiprocessing/process.py", line 108, 
+                    in run                                                      
+                    (EngineCore pid=195)     self._target(*self._args,          
+                    **self._kwargs)                                             
+                    (EngineCore pid=195)                                        
+                    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                   
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/engine/core
+                    .py", line 1112, in run_engine_core                         
+                    (EngineCore pid=195)     raise e                            
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/engine/core
+                    .py", line 1082, in run_engine_core                         
+                    (EngineCore pid=195)     engine_core = EngineCoreProc(*args,
+                    engine_index=dp_rank, **kwargs)                             
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/vllm/tracing/otel.p
+                    y", line 178, in sync_wrapper                               
+                    (EngineCore pid=195)     return func(*args, **kwargs)       
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/engine/core
+                    .py", line 848, in __init__                                 
+                    (EngineCore pid=195)     super().__init__(                  
+                    (EngineCore pid=195)     ~~~~~~~~~~~~~~~~^                  
+                    (EngineCore pid=195)         vllm_config,                   
+                    (EngineCore pid=195)         ^^^^^^^^^^^^                   
+                    (EngineCore pid=195)     ...<3 lines>...                    
+                    (EngineCore pid=195)         internal_dp_balancing,         
+                    (EngineCore pid=195)         ^^^^^^^^^^^^^^^^^^^^^^         
+                    (EngineCore pid=195)     )                                  
+                    (EngineCore pid=195)     ^                                  
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/engine/core
+                    .py", line 124, in __init__                                 
+                    (EngineCore pid=195)     kv_cache_config =                  
+                    self._initialize_kv_caches(vllm_config)                     
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/vllm/tracing/otel.p
+                    y", line 178, in sync_wrapper                               
+                    (EngineCore pid=195)     return func(*args, **kwargs)       
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/engine/core
+                    .py", line 280, in _initialize_kv_caches                    
+                    (EngineCore pid=195)                                        
+                    self.model_executor.initialize_from_config(kv_cache_configs)
+                    (EngineCore pid=195)                                        
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/executor/ab
+                    stract.py", line 118, in initialize_from_config             
+                    (EngineCore pid=195)     compilation_times: list =          
+                    self.collective_rpc("compile_or_warm_up_model")             
+                    (EngineCore pid=195)                                        
+                    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^             
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/executor/un
+                    iproc_executor.py", line 80, in collective_rpc              
+                    (EngineCore pid=195)     result =                           
+                    run_method(self.driver_worker, method, args, kwargs)        
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/serial_util
+                    s.py", line 510, in run_method                              
+                    (EngineCore pid=195)     return func(*args, **kwargs)       
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/vllm/tracing/otel.p
+                    y", line 178, in sync_wrapper                               
+                    (EngineCore pid=195)     return func(*args, **kwargs)       
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/worker/gpu_
+                    worker.py", line 584, in compile_or_warm_up_model           
+                    (EngineCore pid=195)     kernel_warmup(self)                
+                    (EngineCore pid=195)     ~~~~~~~~~~~~~^^^^^^                
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/vllm/model_executor
+                    /warmup/kernel_warmup.py", line 72, in kernel_warmup        
+                    (EngineCore pid=195)     worker.model_runner._dummy_run(    
+                    (EngineCore pid=195)     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^    
+                    (EngineCore pid=195)         num_tokens=16,                 
+                    (EngineCore pid=195)         ^^^^^^^^^^^^^^                 
+                    (EngineCore pid=195)     ...<3 lines>...                    
+                    (EngineCore pid=195)         create_mixed_batch=True,       
+                    (EngineCore pid=195)         ^^^^^^^^^^^^^^^^^^^^^^^^       
+                    (EngineCore pid=195)     )                                  
+                    (EngineCore pid=195)     ^                                  
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/torch/utils/_contex
+                    tlib.py", line 124, in decorate_context                     
+                    (EngineCore pid=195)     return func(*args, **kwargs)       
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/worker/gpu_
+                    model_runner.py", line 5394, in _dummy_run                  
+                    (EngineCore pid=195)     attn_metadata, _ =                 
+                    self._build_attention_metadata(                             
+                    (EngineCore pid=195)                                        
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^                             
+                    (EngineCore pid=195)         num_tokens=num_tokens_unpadded,
+                    (EngineCore pid=195)         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                    (EngineCore pid=195)     ...<6 lines>...                    
+                    (EngineCore pid=195)                                        
+                    use_spec_decode=self.speculative_config is not None,        
+                    (EngineCore pid=195)                                        
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^        
+                    (EngineCore pid=195)     )                                  
+                    (EngineCore pid=195)     ^                                  
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/worker/gpu_
+                    model_runner.py", line 2319, in _build_attention_metadata   
+                    (EngineCore pid=195)                                        
+                    _build_attn_group_metadata(kv_cache_gid, attn_gid, cm)      
+                    (EngineCore pid=195)                                        
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^      
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/worker/gpu_
+                    model_runner.py", line 2270, in _build_attn_group_metadata  
+                    (EngineCore pid=195)     attn_metadata_i = builder.build(   
+                    (EngineCore pid=195)                                        
+                    common_prefix_len=cascade_attn_prefix_len,                  
+                    (EngineCore pid=195)                                        
+                    common_attn_metadata=common_attn_metadata,                  
+                    (EngineCore pid=195)         **extra_attn_metadata_args,    
+                    (EngineCore pid=195)     )                                  
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/vllm/v1/attention/b
+                    ackends/flashinfer.py", line 1109, in build                 
+                    (EngineCore pid=195)     prefill_wrapper.plan(              
+                    (EngineCore pid=195)     ~~~~~~~~~~~~~~~~~~~~^              
+                    (EngineCore pid=195)                                        
+                    qo_indptr=qo_indptr_prefill_cpu,                            
+                    (EngineCore pid=195)                                        
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                            
+                    (EngineCore pid=195)     ...<15 lines>...                   
+                    (EngineCore pid=195)                                        
+                    disable_split_kv=self.disable_split_kv,                     
+                    (EngineCore pid=195)                                        
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                     
+                    (EngineCore pid=195)     )                                  
+                    (EngineCore pid=195)     ^                                  
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/flashinfer/prefill.
+                    py", line 1935, in plan                                     
+                    (EngineCore pid=195)     self._cached_module =              
+                    get_batch_prefill_module(                                   
+                    (EngineCore pid=195)                                        
+                    ~~~~~~~~~~~~~~~~~~~~~~~~^                                   
+                    (EngineCore pid=195)         self._backend, *get_module_args
+                    (EngineCore pid=195)         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                    (EngineCore pid=195)     )                                  
+                    (EngineCore pid=195)     ^                                  
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/flashinfer/prefill.
+                    py", line 414, in get_batch_prefill_module                  
+                    (EngineCore pid=195)     module =                           
+                    gen_batch_prefill_module(backend, *args).build_and_load()   
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/flashinfer/jit/core
+                    .py", line 318, in build_and_load                           
+                    (EngineCore pid=195)     self.build(verbose,                
+                    need_lock=False)                                            
+                    (EngineCore pid=195)                                        
+                    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^                        
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/flashinfer/jit/core
+                    .py", line 304, in build                                    
+                    (EngineCore pid=195)     run_ninja(self.build_dir,          
+                    self.ninja_path, verbose)                                   
+                    (EngineCore pid=195)                                        
+                    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^         
+                    (EngineCore pid=195)   File                                 
+                    "/usr/local/lib/python3.13/dist-packages/flashinfer/jit/cpp_
+                    ext.py", line 344, in run_ninja                             
+                    (EngineCore pid=195)     raise RuntimeError(msg) from e     
+                    (EngineCore pid=195) RuntimeError: Ninja build failed. Ninja
+                    output:                                                     
+                    (EngineCore pid=195) ninja: Entering directory              
+                    `/root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_w
+                    ith_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_
+                    i32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_u
+                    se_logits_cap_False_f16qk_False'                            
+                    (EngineCore pid=195) [1/11] /usr/local/cuda/bin/nvcc        
+                    --generate-dependencies-with-compile --dependency-output    
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_1.cuda.o.d -DPy_LIMITED_API=0x03090000                  
+                    -D_GLIBCXX_USE_CXX11_ABI=1 -isystem /usr/include/python3.13 
+                    -isystem /usr/local/cuda/include -isystem                   
+                    /usr/local/cuda/include/cccl -isystem                       
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/incl
+                    ude -isystem                                                
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/csrc
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/include -isystem                                        
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/tools/util/include -isystem                             
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/spdl
+                    og/include --compiler-options=-fPIC --expt-relaxed-constexpr
+                    -static-global-template-stub=false                          
+                    -gencode=arch=compute_75,code=sm_75                         
+                    -DFLASHINFER_ENABLE_FP8_E8M0 -DFLASHINFER_ENABLE_FP4_E2M1   
+                    -std=c++17 --threads=1 -use_fast_math                       
+                    -DFLASHINFER_ENABLE_F16 -DFLASHINFER_ENABLE_BF16            
+                    -DFLASHINFER_ENABLE_FP8_E4M3 -DFLASHINFER_ENABLE_FP8_E5M2   
+                    -DNDEBUG -O3 -c                                             
+                    /root/.cache/flashinfer/0.6.6/75/generated/batch_prefill_wit
+                    h_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i3
+                    2_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_use
+                    _logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_ma
+                    sk_1.cu -o                                                  
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_1.cuda.o                                                
+                    (EngineCore pid=195) [2/11] /usr/local/cuda/bin/nvcc        
+                    --generate-dependencies-with-compile --dependency-output    
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_0.cuda.o.d -DPy_LIMITED_API=0x03090000                  
+                    -D_GLIBCXX_USE_CXX11_ABI=1 -isystem /usr/include/python3.13 
+                    -isystem /usr/local/cuda/include -isystem                   
+                    /usr/local/cuda/include/cccl -isystem                       
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/incl
+                    ude -isystem                                                
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/csrc
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/include -isystem                                        
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/tools/util/include -isystem                             
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/spdl
+                    og/include --compiler-options=-fPIC --expt-relaxed-constexpr
+                    -static-global-template-stub=false                          
+                    -gencode=arch=compute_75,code=sm_75                         
+                    -DFLASHINFER_ENABLE_FP8_E8M0 -DFLASHINFER_ENABLE_FP4_E2M1   
+                    -std=c++17 --threads=1 -use_fast_math                       
+                    -DFLASHINFER_ENABLE_F16 -DFLASHINFER_ENABLE_BF16            
+                    -DFLASHINFER_ENABLE_FP8_E4M3 -DFLASHINFER_ENABLE_FP8_E5M2   
+                    -DNDEBUG -O3 -c                                             
+                    /root/.cache/flashinfer/0.6.6/75/generated/batch_prefill_wit
+                    h_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i3
+                    2_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_use
+                    _logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_ma
+                    sk_0.cu -o                                                  
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_0.cuda.o                                                
+                    (EngineCore pid=195) [3/11] /usr/local/cuda/bin/nvcc        
+                    --generate-dependencies-with-compile --dependency-output    
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_1.cuda.o.d -DPy_LIMITED_API=0x03090000                   
+                    -D_GLIBCXX_USE_CXX11_ABI=1 -isystem /usr/include/python3.13 
+                    -isystem /usr/local/cuda/include -isystem                   
+                    /usr/local/cuda/include/cccl -isystem                       
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/incl
+                    ude -isystem                                                
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/csrc
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/include -isystem                                        
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/tools/util/include -isystem                             
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/spdl
+                    og/include --compiler-options=-fPIC --expt-relaxed-constexpr
+                    -static-global-template-stub=false                          
+                    -gencode=arch=compute_75,code=sm_75                         
+                    -DFLASHINFER_ENABLE_FP8_E8M0 -DFLASHINFER_ENABLE_FP4_E2M1   
+                    -std=c++17 --threads=1 -use_fast_math                       
+                    -DFLASHINFER_ENABLE_F16 -DFLASHINFER_ENABLE_BF16            
+                    -DFLASHINFER_ENABLE_FP8_E4M3 -DFLASHINFER_ENABLE_FP8_E5M2   
+                    -DNDEBUG -O3 -c                                             
+                    /root/.cache/flashinfer/0.6.6/75/generated/batch_prefill_wit
+                    h_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i3
+                    2_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_use
+                    _logits_cap_False_f16qk_False/batch_prefill_paged_kernel_mas
+                    k_1.cu -o                                                   
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_1.cuda.o                                                 
+                    (EngineCore pid=195) [4/11] /usr/local/cuda/bin/nvcc        
+                    --generate-dependencies-with-compile --dependency-output    
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_0.cuda.o.d -DPy_LIMITED_API=0x03090000                   
+                    -D_GLIBCXX_USE_CXX11_ABI=1 -isystem /usr/include/python3.13 
+                    -isystem /usr/local/cuda/include -isystem                   
+                    /usr/local/cuda/include/cccl -isystem                       
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/incl
+                    ude -isystem                                                
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/csrc
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/include -isystem                                        
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/tools/util/include -isystem                             
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/spdl
+                    og/include --compiler-options=-fPIC --expt-relaxed-constexpr
+                    -static-global-template-stub=false                          
+                    -gencode=arch=compute_75,code=sm_75                         
+                    -DFLASHINFER_ENABLE_FP8_E8M0 -DFLASHINFER_ENABLE_FP4_E2M1   
+                    -std=c++17 --threads=1 -use_fast_math                       
+                    -DFLASHINFER_ENABLE_F16 -DFLASHINFER_ENABLE_BF16            
+                    -DFLASHINFER_ENABLE_FP8_E4M3 -DFLASHINFER_ENABLE_FP8_E5M2   
+                    -DNDEBUG -O3 -c                                             
+                    /root/.cache/flashinfer/0.6.6/75/generated/batch_prefill_wit
+                    h_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i3
+                    2_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_use
+                    _logits_cap_False_f16qk_False/batch_prefill_paged_kernel_mas
+                    k_0.cu -o                                                   
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_0.cuda.o                                                 
+                    (EngineCore pid=195) [5/11] /usr/local/cuda/bin/nvcc        
+                    --generate-dependencies-with-compile --dependency-output    
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_2.cuda.o.d -DPy_LIMITED_API=0x03090000                   
+                    -D_GLIBCXX_USE_CXX11_ABI=1 -isystem /usr/include/python3.13 
+                    -isystem /usr/local/cuda/include -isystem                   
+                    /usr/local/cuda/include/cccl -isystem                       
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/incl
+                    ude -isystem                                                
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/csrc
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/include -isystem                                        
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/tools/util/include -isystem                             
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/spdl
+                    og/include --compiler-options=-fPIC --expt-relaxed-constexpr
+                    -static-global-template-stub=false                          
+                    -gencode=arch=compute_75,code=sm_75                         
+                    -DFLASHINFER_ENABLE_FP8_E8M0 -DFLASHINFER_ENABLE_FP4_E2M1   
+                    -std=c++17 --threads=1 -use_fast_math                       
+                    -DFLASHINFER_ENABLE_F16 -DFLASHINFER_ENABLE_BF16            
+                    -DFLASHINFER_ENABLE_FP8_E4M3 -DFLASHINFER_ENABLE_FP8_E5M2   
+                    -DNDEBUG -O3 -c                                             
+                    /root/.cache/flashinfer/0.6.6/75/generated/batch_prefill_wit
+                    h_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i3
+                    2_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_use
+                    _logits_cap_False_f16qk_False/batch_prefill_paged_kernel_mas
+                    k_2.cu -o                                                   
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_2.cuda.o                                                 
+                    (EngineCore pid=195) [6/11] /usr/local/cuda/bin/nvcc        
+                    --generate-dependencies-with-compile --dependency-output    
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_2.cuda.o.d -DPy_LIMITED_API=0x03090000                  
+                    -D_GLIBCXX_USE_CXX11_ABI=1 -isystem /usr/include/python3.13 
+                    -isystem /usr/local/cuda/include -isystem                   
+                    /usr/local/cuda/include/cccl -isystem                       
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/incl
+                    ude -isystem                                                
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/csrc
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/include -isystem                                        
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/tools/util/include -isystem                             
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/spdl
+                    og/include --compiler-options=-fPIC --expt-relaxed-constexpr
+                    -static-global-template-stub=false                          
+                    -gencode=arch=compute_75,code=sm_75                         
+                    -DFLASHINFER_ENABLE_FP8_E8M0 -DFLASHINFER_ENABLE_FP4_E2M1   
+                    -std=c++17 --threads=1 -use_fast_math                       
+                    -DFLASHINFER_ENABLE_F16 -DFLASHINFER_ENABLE_BF16            
+                    -DFLASHINFER_ENABLE_FP8_E4M3 -DFLASHINFER_ENABLE_FP8_E5M2   
+                    -DNDEBUG -O3 -c                                             
+                    /root/.cache/flashinfer/0.6.6/75/generated/batch_prefill_wit
+                    h_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i3
+                    2_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_use
+                    _logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_ma
+                    sk_2.cu -o                                                  
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_2.cuda.o                                                
+                    (EngineCore pid=195) [7/11] /usr/local/cuda/bin/nvcc        
+                    --generate-dependencies-with-compile --dependency-output    
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill.cuda.o.d       
+                    -DPy_LIMITED_API=0x03090000 -D_GLIBCXX_USE_CXX11_ABI=1      
+                    -isystem /usr/include/python3.13 -isystem                   
+                    /usr/local/cuda/include -isystem                            
+                    /usr/local/cuda/include/cccl -isystem                       
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/incl
+                    ude -isystem                                                
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/csrc
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/include -isystem                                        
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/tools/util/include -isystem                             
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/spdl
+                    og/include --compiler-options=-fPIC --expt-relaxed-constexpr
+                    -static-global-template-stub=false                          
+                    -gencode=arch=compute_75,code=sm_75                         
+                    -DFLASHINFER_ENABLE_FP8_E8M0 -DFLASHINFER_ENABLE_FP4_E2M1   
+                    -std=c++17 --threads=1 -use_fast_math                       
+                    -DFLASHINFER_ENABLE_F16 -DFLASHINFER_ENABLE_BF16            
+                    -DFLASHINFER_ENABLE_FP8_E4M3 -DFLASHINFER_ENABLE_FP8_E5M2   
+                    -DNDEBUG -O3 -c                                             
+                    /root/.cache/flashinfer/0.6.6/75/generated/batch_prefill_wit
+                    h_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i3
+                    2_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_use
+                    _logits_cap_False_f16qk_False/batch_prefill.cu -o           
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill.cuda.o         
+                    (EngineCore pid=195) [8/11] /usr/local/cuda/bin/nvcc        
+                    --generate-dependencies-with-compile --dependency-output    
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_3.cuda.o.d -DPy_LIMITED_API=0x03090000                  
+                    -D_GLIBCXX_USE_CXX11_ABI=1 -isystem /usr/include/python3.13 
+                    -isystem /usr/local/cuda/include -isystem                   
+                    /usr/local/cuda/include/cccl -isystem                       
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/incl
+                    ude -isystem                                                
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/csrc
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/include -isystem                                        
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/tools/util/include -isystem                             
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/spdl
+                    og/include --compiler-options=-fPIC --expt-relaxed-constexpr
+                    -static-global-template-stub=false                          
+                    -gencode=arch=compute_75,code=sm_75                         
+                    -DFLASHINFER_ENABLE_FP8_E8M0 -DFLASHINFER_ENABLE_FP4_E2M1   
+                    -std=c++17 --threads=1 -use_fast_math                       
+                    -DFLASHINFER_ENABLE_F16 -DFLASHINFER_ENABLE_BF16            
+                    -DFLASHINFER_ENABLE_FP8_E4M3 -DFLASHINFER_ENABLE_FP8_E5M2   
+                    -DNDEBUG -O3 -c                                             
+                    /root/.cache/flashinfer/0.6.6/75/generated/batch_prefill_wit
+                    h_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i3
+                    2_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_use
+                    _logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_ma
+                    sk_3.cu -o                                                  
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_3.cuda.o                                                
+                    (EngineCore pid=195) [9/11] /usr/local/cuda/bin/nvcc        
+                    --generate-dependencies-with-compile --dependency-output    
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_jit_binding.cud
+                    a.o.d -DPy_LIMITED_API=0x03090000 -D_GLIBCXX_USE_CXX11_ABI=1
+                    -isystem /usr/include/python3.13 -isystem                   
+                    /usr/local/cuda/include -isystem                            
+                    /usr/local/cuda/include/cccl -isystem                       
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/incl
+                    ude -isystem                                                
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/csrc
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/include -isystem                                        
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/tools/util/include -isystem                             
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/spdl
+                    og/include --compiler-options=-fPIC --expt-relaxed-constexpr
+                    -static-global-template-stub=false                          
+                    -gencode=arch=compute_75,code=sm_75                         
+                    -DFLASHINFER_ENABLE_FP8_E8M0 -DFLASHINFER_ENABLE_FP4_E2M1   
+                    -std=c++17 --threads=1 -use_fast_math                       
+                    -DFLASHINFER_ENABLE_F16 -DFLASHINFER_ENABLE_BF16            
+                    -DFLASHINFER_ENABLE_FP8_E4M3 -DFLASHINFER_ENABLE_FP8_E5M2   
+                    -DNDEBUG -O3 -c                                             
+                    /root/.cache/flashinfer/0.6.6/75/generated/batch_prefill_wit
+                    h_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i3
+                    2_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_use
+                    _logits_cap_False_f16qk_False/batch_prefill_jit_binding.cu  
+                    -o                                                          
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_jit_binding.cud
+                    a.o                                                         
+                    (EngineCore pid=195) [10/11] /usr/local/cuda/bin/nvcc       
+                    --generate-dependencies-with-compile --dependency-output    
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_3.cuda.o.d -DPy_LIMITED_API=0x03090000                   
+                    -D_GLIBCXX_USE_CXX11_ABI=1 -isystem /usr/include/python3.13 
+                    -isystem /usr/local/cuda/include -isystem                   
+                    /usr/local/cuda/include/cccl -isystem                       
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/tvm_ffi/include     
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/incl
+                    ude -isystem                                                
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/csrc
+                    -isystem                                                    
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/include -isystem                                        
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/cutl
+                    ass/tools/util/include -isystem                             
+                    /usr/local/lib/python3.13/dist-packages/flashinfer/data/spdl
+                    og/include --compiler-options=-fPIC --expt-relaxed-constexpr
+                    -static-global-template-stub=false                          
+                    -gencode=arch=compute_75,code=sm_75                         
+                    -DFLASHINFER_ENABLE_FP8_E8M0 -DFLASHINFER_ENABLE_FP4_E2M1   
+                    -std=c++17 --threads=1 -use_fast_math                       
+                    -DFLASHINFER_ENABLE_F16 -DFLASHINFER_ENABLE_BF16            
+                    -DFLASHINFER_ENABLE_FP8_E4M3 -DFLASHINFER_ENABLE_FP8_E5M2   
+                    -DNDEBUG -O3 -c                                             
+                    /root/.cache/flashinfer/0.6.6/75/generated/batch_prefill_wit
+                    h_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i3
+                    2_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_use
+                    _logits_cap_False_f16qk_False/batch_prefill_paged_kernel_mas
+                    k_3.cu -o                                                   
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_3.cuda.o                                                 
+                    (EngineCore pid=195) [11/11] c++                            
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_0.cuda.o                                                 
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_0.cuda.o                                                
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_1.cuda.o                                                 
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_1.cuda.o                                                
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_2.cuda.o                                                 
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_2.cuda.o                                                
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_3.cuda.o                                                 
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_3.cuda.o                                                
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill.cuda.o         
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_jit_binding.cud
+                    a.o -shared -L/usr/local/cuda/lib64                         
+                    -L/usr/local/cuda/lib64/stubs -lcudart -lcuda -o            
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_with_kv_cache_d
+                    type_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i32_head_dim_q
+                    k_128_head_dim_vo_128_posenc_0_use_swa_False_use_logits_cap_
+                    False_f16qk_False.so                                        
+                    (EngineCore pid=195) FAILED:                                
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_with_kv_cache_d
+                    type_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i32_head_dim_q
+                    k_128_head_dim_vo_128_posenc_0_use_swa_False_use_logits_cap_
+                    False_f16qk_False.so                                        
+                    (EngineCore pid=195) c++                                    
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_0.cuda.o                                                 
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_0.cuda.o                                                
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_1.cuda.o                                                 
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_1.cuda.o                                                
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_2.cuda.o                                                 
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_2.cuda.o                                                
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_paged_kernel_ma
+                    sk_3.cuda.o                                                 
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_ragged_kernel_m
+                    ask_3.cuda.o                                                
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill.cuda.o         
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_jit_binding.cud
+                    a.o -shared -L/usr/local/cuda/lib64                         
+                    -L/usr/local/cuda/lib64/stubs -lcudart -lcuda -o            
+                    /root/.cache/flashinfer/0.6.6/75/cached_ops/batch_prefill_wi
+                    th_kv_cache_dtype_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i
+                    32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_us
+                    e_logits_cap_False_f16qk_False/batch_prefill_with_kv_cache_d
+                    type_q_f16_dtype_kv_f16_dtype_o_f16_dtype_idx_i32_head_dim_q
+                    k_128_head_dim_vo_128_posenc_0_use_swa_False_use_logits_cap_
+                    False_f16qk_False.so                                        
+                    (EngineCore pid=195) /usr/bin/ld: cannot find -lcuda: No    
+                    such file or directory                                      
+                    (EngineCore pid=195) collect2: error: ld returned 1 exit    
+                    status                                                      
+                    (EngineCore pid=195) ninja: build stopped: subcommand       
+                    failed.                                                     
+                    (EngineCore pid=195)                                        
+                    :[W1108 07:12:45.631614858 ProcessGroupNCCL.cpp:1553]       
+                    Warning: WARNING: destroy_process_group() was not called    
+                    before program exit, which can leak resources. For more     
+                    info, please see                                            
+                    https://pytorch.org/docs/stable/distributed.html#shutdown   
+                    (function operator())                                       
+                                                                                
+[07:12:50] ERROR    ✗ TP=1  booting vLLM engine (failed after 140.2s)           
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/kaggle/working/t4/profiler/__main__.py", line 446, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/kaggle/working/t4/profiler/__main__.py", line 430, in main
+    run_full(arch_path, profile_args, ns.out_root)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/kaggle/working/t4/profiler/core/runner.py", line 172, in run_full
+    llm, engine_kwargs, tmpdir = spin_up(args, tp)
+                                 ~~~~~~~^^^^^^^^^^
+  File "/kaggle/working/t4/profiler/core/engine.py", line 246, in spin_up
+    llm = LLM(**kwargs)
+  File "/usr/local/lib/python3.13/dist-packages/vllm/entrypoints/llm.py", line 382, in __init__
+    self.llm_engine = LLMEngine.from_engine_args(
+                      ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        engine_args=engine_args, usage_context=UsageContext.LLM_CLASS
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.13/dist-packages/vllm/v1/engine/llm_engine.py", line 177, in from_engine_args
+    return cls(
+        vllm_config=vllm_config,
+    ...<4 lines>...
+        multiprocess_mode=enable_multiprocessing,
+    )
+  File "/usr/local/lib/python3.13/dist-packages/vllm/v1/engine/llm_engine.py", line 111, in __init__
+    self.engine_core = EngineCoreClient.make_client(
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        multiprocess_mode=multiprocess_mode,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        log_stats=self.log_stats,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.13/dist-packages/vllm/v1/engine/core_client.py", line 101, in make_client
+    return SyncMPClient(vllm_config, executor_class, log_stats)
+  File "/usr/local/lib/python3.13/dist-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+    return func(*args, **kwargs)
+  File "/usr/local/lib/python3.13/dist-packages/vllm/v1/engine/core_client.py", line 710, in __init__
+    super().__init__(
+    ~~~~~~~~~~~~~~~~^
+        asyncio_mode=False,
+        ^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        log_stats=log_stats,
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.13/dist-packages/vllm/v1/engine/core_client.py", line 535, in __init__
+    with launch_core_engines(
+         ~~~~~~~~~~~~~~~~~~~^
+        vllm_config, executor_class, log_stats, addresses
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ) as (engine_manager, coordinator, addresses, tensor_queue):
+    ^
+  File "/usr/lib/python3.13/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/usr/local/lib/python3.13/dist-packages/vllm/v1/engine/utils.py", line 998, in launch_core_engines
+    wait_for_engine_startup(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        handshake_socket,
+        ^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+        coordinator.proc if coordinator else None,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.13/dist-packages/vllm/v1/engine/utils.py", line 1057, in wait_for_engine_startup
+    raise RuntimeError(
+    ...<3 lines>...
+    )
+RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+First attempt did not finish; retrying from scratch with Triton attention
+[07:13:07] INFO     Model config:                                               
+                    /kaggle/working/t4/configs/model/Qwen/Qwen3-30B-A3B-Instruct
+                    -2507.json (model_type=qwen3_moe → architecture=qwen3_moe)  
+───────── Profiling Qwen/Qwen3-30B-A3B-Instruct-2507 on T4 (qwen3_moe) ─────────
+           INFO     Variant: fp16                                               
+           INFO     TP degrees: [1, 2]                                          
+           INFO     Output root:                                                
+                    /kaggle/working/t4/profiler/perf/T4/Qwen/Qwen3-30B-A3B-Instr
+                    uct-2507/fp16                                               
+           INFO     → TP=1  booting vLLM engine                                 
+[07:13:35] INFO     ✓ TP=1  booting vLLM engine (28.3s)                         
+           INFO     TP=1 limits: num_cache_tokens=4726768 max_model_len=262144  
+                    max_num_batched_tokens=2048 max_num_seqs=256 num_experts=128
+                    top_k=8                                                     
+TP=1  dense ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 152/152 0:11:52 • 0:00:00
+[07:25:28] INFO     ✓ dense →                                                   
+                    /kaggle/working/t4/profiler/perf/T4/Qwen/Qwen3-30B-A3B-Instr
+                    uct-2507/fp16/tp1/dense.csv                                 
+TP=1  per_sequence ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 40/40 0:00:50 • 0:00:00
+[07:26:18] INFO     ✓ per_sequence →                                            
+                    /kaggle/working/t4/profiler/perf/T4/Qwen/Qwen3-30B-A3B-Instr
+                    uct-2507/fp16/tp1/per_sequence.csv                          
+TP=1  attention ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1769/1769 2:02:26 • 0:00:00
+[09:28:45] INFO     ✓ attention →                                               
+                    /kaggle/working/t4/profiler/perf/T4/Qwen/Qwen3-30B-A3B-Instr
+                    uct-2507/fp16/tp1/attention.csv                             
+TP=1  moe ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 50/50 0:02:08 • 0:00:00
+[09:30:53] INFO     ✓ moe →                                                     
+                    /kaggle/working/t4/profiler/perf/T4/Qwen/Qwen3-30B-A3B-Instr
+                    uct-2507/fp16/tp1/moe.csv                                   
+[09:30:55] INFO     → TP=2  booting vLLM engine                                 
+[09:31:29] INFO     ✓ TP=2  booting vLLM engine (33.8s)                         
+           INFO     TP=2 limits: num_cache_tokens=10356960 max_model_len=262144 
+                    max_num_batched_tokens=2048 max_num_seqs=256 num_experts=128
+                    top_k=8                                                     
+TP=2  dense ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 152/152 0:11:24 • 0:00:00
+[09:42:54] INFO     ✓ dense →                                                   
+                    /kaggle/working/t4/profiler/perf/T4/Qwen/Qwen3-30B-A3B-Instr
+                    uct-2507/fp16/tp2/dense.csv                                 
+TP=2  per_sequence ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 40/40 0:00:48 • 0:00:00
+[09:43:43] INFO     ✓ per_sequence →                                            
+                    /kaggle/working/t4/profiler/perf/T4/Qwen/Qwen3-30B-A3B-Instr
+                    uct-2507/fp16/tp2/per_sequence.csv                          
+TP=2  attention ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1769/1769 1:56:57 • 0:00:00
+[11:40:40] INFO     ✓ attention →                                               
+                    /kaggle/working/t4/profiler/perf/T4/Qwen/Qwen3-30B-A3B-Instr
+                    uct-2507/fp16/tp2/attention.csv                             
+[11:40:43] INFO     → replicating tp_stable layers across TP folders            
+           INFO     ✓ replicating tp_stable layers across TP folders (0.0s)     
+───────────────────────────────────── Done ─────────────────────────────────────
+           INFO     Results written to:                                         
+                    /kaggle/working/t4/profiler/perf/T4/Qwen/Qwen3-30B-A3B-Instr
+                    uct-2507/fp16                                               

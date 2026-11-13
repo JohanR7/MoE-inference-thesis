@@ -100,6 +100,10 @@ def _profile_engine_overrides(args: ProfileArgs) -> dict[str, Any]:
         out["max_num_batched_tokens"] = args.max_num_batched_tokens
     if args.max_num_seqs is not None:
         out["max_num_seqs"] = args.max_num_seqs
+    if args.gpu_memory_utilization is not None:
+        out["gpu_memory_utilization"] = args.gpu_memory_utilization
+    if args.attention_backend is not None:
+        out["attention_backend"] = args.attention_backend
     if args.hf_overrides is not None:
         out["hf_overrides"] = args.hf_overrides
     return out

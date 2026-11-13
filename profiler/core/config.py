@@ -366,6 +366,8 @@ class ProfileArgs:
     kv_cache_dtype: str | None = None
     max_num_batched_tokens: int | None = None
     max_num_seqs: int | None = None
+    gpu_memory_utilization: float | None = None
+    attention_backend: str | None = None
     hf_overrides: dict[str, Any] | None = None
     """CLI-specified hf_overrides applied on top of the model config
     at vLLM load time."""

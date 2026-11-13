@@ -1,0 +1,89 @@
+diff --git a/src/converter/llm_converter.py b/src/converter/llm_converter.py
+index a19e031..155ba3f 100644
+--- a/src/converter/llm_converter.py
++++ b/src/converter/llm_converter.py
+@@ -23,7 +23,23 @@ class Layer:
+     def __init__(self, line: str):
+         try:
+             col = line.strip().split()
+-            if col[0] == 'EXPERT': # If Expert Flag
++            self.is_prefetch = False                     # new flag; False for every other line type
++            if col[0] == 'PREFETCH': # Expert weights loaded ahead of the block that uses them
++                # PREFETCH <rank> <target_moe_block> <memory_loc> <bytes>
++                self.name = col[0]
++                self.is_prefetch = True
++                self.is_expert = False                   # not an EXPERT marker
++                self.is_pim = False                      # not a PIM marker
++                self.prefetch_rank = int(col[1])         # local GPU that does the load
++                self.target_block = int(col[2])          # MoE block (layer) whose experts need it
++                self.weight_memory_loc = str(col[3])     # where the weights come from, e.g. REMOTE:0
++                self.weight_memory_size = int(col[4])    # bytes to load
++                # Fields other code reads from every line, set so this line is harmless there
++                self.comm_type = "NONE"
++                self.involved_dim = None
++                self.comm_node = None
++                self.comp_node = None
++            elif col[0] == 'EXPERT': # If Expert Flag
+                 self.name = col[0]
+                 self.expert_num = col[1]
+                 self.comm_type, self.involved_dim = self._parse_comm_type(str(col[2]) if len(col) > 2 else "NONE")
+@@ -390,8 +406,37 @@ class LLMConverter:
+                     pim_comp_nodes = []
+                     past_pim_comp_nodes = []
+                     last_batch_type = "BATCH_1"
++                    # MoE blocks are numbered by the EXPERT END lines before them, so a
++                    # PREFETCH line can name the block whose expert compute waits for it.
++                    # Count the MoE blocks before this pipeline stage starts (0 when pp_size = 1)
++                    moe_block = sum(1 for l in layers[:layer_start] if l.is_expert and l.expert_num == 'END')
++                    pending_prefetch = {}  # moe block -> prefetch load nodes for this NPU
+                     layer_num = layer_start
+                     while expert_start or pim_start or attn_remain or layer_num < layer_end:
++                        if layers[layer_num].is_prefetch:
++                            # Starts once the latest compute is done and overlaps
++                            # whatever follows; only the target block's expert
++                            # compute waits for it.
++                            # Only the NPU named on the line gets the load (one .et file per NPU)
++                            if layers[layer_num].prefetch_rank % npus_per_group == npu_offset:
++                                prefetch_node = self.get_memory_load_node(   # a MEM_LOAD node
++                                    "prefetch_block%d" % layers[layer_num].target_block,
++                                    "WEIGHT",
++                                    layers[layer_num].weight_memory_loc,
++                                    layers[layer_num].weight_memory_size,
++                                )
++                                # It may start once this NPU's latest compute (its experts of
++                                # the previous block) is done
++                                self.add_parent(prefetch_node, comp_node)
++                                encode_message(g, prefetch_node)             # write it to the graph
++                                # Remember it until the target block's expert compute is built
++                                pending_prefetch.setdefault(layers[layer_num].target_block, []).append(prefetch_node)
++                            # Pass the dependency chain through to the next row
++                            # (the row after this one looks at layers[layer_num - 1] for its parent)
++                            layers[layer_num].comm_node = layers[layer_num - 1].comm_node
++                            layers[layer_num].comp_node = layers[layer_num - 1].comp_node
++                            layer_num += 1                                   # PREFETCH line handled
++                            continue
+                         if not layers[layer_num].is_expert and not layers[layer_num].is_pim: 
+                             if (self.local_offloading or layers[layer_num].weight_memory_loc != "LOCAL") and layers[layer_num].weight_memory_size > 0:
+                                 # Load weight (for weight offloading)
+@@ -444,6 +489,13 @@ class LLMConverter:
+                                         else:
+                                             self.add_parent(comp_node, layers[layer_num - 2].comp_node)
+ 
++                                # An expert's compute waits for the weights prefetched for its block
++                                # (expert_start = we are inside an EXPERT block; pop = each load
++                                # is consumed by this NPU's first expert compute of that block)
++                                if expert_start and moe_block in pending_prefetch:
++                                    for prefetch_node in pending_prefetch.pop(moe_block):
++                                        self.add_parent(comp_node, prefetch_node)
++
+                                 # handle pim_compute_mode dependency & should not be remaining attention
+                                 if not attn_remain and len(pim_comp_nodes) != 0:
+                                     if layers[layer_num].misc == "NONE": # no sub-batch interleaving
+@@ -498,6 +550,7 @@ class LLMConverter:
+                             # check expert end
+                             if layers[layer_num].expert_num == 'END':
+                                 expert_start = False
++                                moe_block += 1   # new: the next EXPERT block is the next MoE block
+                                 layers[layer_num].comp_node = comp_node # is latest comp_node
+                                 # End of expert, add ALLTOALL communication after expert computation
+                                 if layers[layer_num].comm_size > 0 and layers[layer_num].comm_type != "NONE":

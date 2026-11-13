@@ -47,6 +47,8 @@ TP_DEGREES="1,2"
 # KV_CACHE_DTYPE="fp8"             # auto / fp8 / fp16 / bf16
 MAX_NUM_BATCHED_TOKENS=2048      # vLLM's --max-num-batched-tokens
 MAX_NUM_SEQS=256                 # vLLM's --max-num-seqs
+# GPU_MEMORY_UTILIZATION=0.75      # lower on small or shared GPUs (default 0.9)
+# ATTENTION_BACKEND="TRITON_ATTN"  # force vLLM's attention backend (default: automatic)
 
 # --- Attention grid ---------------------------------------------------------
 # Upper bound for kv_prefill / kv_decode axes. The grid grows
@@ -119,6 +121,8 @@ cmd=(python3 -m profiler profile "$MODEL" --hardware "$HARDWARE")
 [[ -n "${KV_CACHE_DTYPE:-}" ]]         && cmd+=(--kv-cache-dtype "$KV_CACHE_DTYPE")
 [[ -n "${MAX_NUM_BATCHED_TOKENS:-}" ]] && cmd+=(--max-num-batched-tokens "$MAX_NUM_BATCHED_TOKENS")
 [[ -n "${MAX_NUM_SEQS:-}" ]]           && cmd+=(--max-num-seqs "$MAX_NUM_SEQS")
+[[ -n "${GPU_MEMORY_UTILIZATION:-}" ]] && cmd+=(--gpu-memory-utilization "$GPU_MEMORY_UTILIZATION")
+[[ -n "${ATTENTION_BACKEND:-}" ]]      && cmd+=(--attention-backend "$ATTENTION_BACKEND")
 [[ -n "${ATTENTION_MAX_KV:-}" ]]       && cmd+=(--attention-max-kv "$ATTENTION_MAX_KV")
 [[ -n "${ATTENTION_CHUNK_FACTOR:-}" ]] && cmd+=(--attention-chunk-factor "$ATTENTION_CHUNK_FACTOR")
 [[ -n "${ATTENTION_KV_FACTOR:-}" ]]    && cmd+=(--attention-kv-factor "$ATTENTION_KV_FACTOR")

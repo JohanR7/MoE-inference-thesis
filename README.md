@@ -13,6 +13,16 @@ A Unified Simulator for Heterogeneous and Disaggregated LLM Serving Infrastructu
 | <a href="https://llmservingsim.ai"><b>Website</b></a> | <a href="https://llmservingsim.ai/docs/getting-started/overview"><b>Documentation</b></a> | <a href="https://llmservingsim.ai/docs/contributor/welcome"><b>Contribute</b></a> | <a href="https://llmservingsim.ai/contact"><b>Contact</b></a> | <a href="https://llmservingsim.ai/changelog"><b>Changelog</b></a> |
 </p>
 
+> **About this fork.** This repository extends LLMServingSim for a thesis project on
+> **DSA-aware resource scheduling for Mixture-of-Experts inference on heterogeneous
+> accelerators**. It adds per-layer expert placement and migration, expert memory budgets
+> with full / reduced / host precision tiers, the DSA-Aware scheduler
+> (`serving/core/dsa_scheduler.py`), baseline policies including an adaptation of HOBBIT,
+> routing-trace replay, prefetching, per-GPU MoE profiles (`ep_hardware`), and new
+> latency profiles (RTX 4050 Laptop, L4, T4, CPU). To reproduce the experiments, see
+> **[experiments/README.md](experiments/README.md)**. The original simulator is by the
+> CASYS Lab at KAIST ([casys-kaist/LLMServingSim](https://github.com/casys-kaist/LLMServingSim), MIT License).
+
 We have built an LLMServingSim website to help you get started with the simulator. Please visit [llmservingsim.ai](https://llmservingsim.ai) for documentation, contribution guides, and team contact info.
 
 ## About

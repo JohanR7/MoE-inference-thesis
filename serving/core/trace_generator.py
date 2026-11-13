@@ -2,6 +2,7 @@ import os
 import re
 from .request import *
 from .utils import *
+import numpy as np        # new: prefetch picks the next layer's expert set with np.unique
 import pandas as pd
 import yaml
 from .memory_model import calculate_sizes
@@ -80,6 +81,34 @@ def _variant_root(hardware, model, variant):
     return f"{_PROFILER_ROOT_REL}/perf/{hardware}/{model}/{variant}"
 
 
+# 16-bit weight dtypes that can stand in for each other on a per-GPU profile
+_EQUIVALENT_WEIGHT = {"bf16": "fp16", "fp16": "bf16"}
+_rank_variant_warned = set()
+
+
+def _load_rank_perf_db(hardware, model, variant, model_type):
+    """Load one EP rank's profile for heterogeneous EP (only its MoE table is used).
+
+    A GPU without bf16 support (e.g. T4) can only be profiled in fp16. When the
+    rank's hardware has no folder for ``variant`` but has the other 16-bit
+    weight dtype with the same KV suffix, that folder is used, with a one-time
+    warning: both are 16-bit formats with the same kernel shapes, and fp16 is
+    what such a GPU actually runs.
+    """
+    weight, _, kv = variant.partition("-")
+    other = _EQUIVALENT_WEIGHT.get(weight)
+    if (not os.path.isdir(_variant_root(hardware, model, variant)) and other
+            and os.path.isdir(_variant_root(hardware, model, "-".join(filter(None, [other, kv]))))):
+        fallback = "-".join(filter(None, [other, kv]))
+        if (hardware, variant) not in _rank_variant_warned:
+            _rank_variant_warned.add((hardware, variant))
+            logger.warning(
+                f"{hardware} has no {variant!r} profile for {model}; using its {fallback!r} "
+                f"profile for this EP rank's MoE timings")
+        variant = fallback
+    return _load_perf_db(hardware, model, variant, set(), model_type)
+
+
 # ======================================================================
 # Data classes
 # ======================================================================
@@ -111,6 +140,9 @@ class TraceCtx:
     ep_total: int      # total EP degree across DP group
     tp_dim: list       # involved_dim for TP collectives (ALLREDUCE), None = all dims
     ep_dim: list       # involved_dim for EP collectives (ALLTOALL), None = all dims
+    # The two fields below are new:
+    ep_rank_offset: int    # global EP rank of this instance's first local rank (DP group position * local_ep)
+    ep_perf_dbs: list      # [local rank] -> perf DB for that rank's MoE lookup (None = perf_db for all)
     dp_sum_total_len: int  # sum of total_len across DP group (0 = DP inactive). Captures the post-AG gathered size for MoE compute; dummy batches are pre-padded to max by serving/__main__.py so the sum reflects vLLM's CUDA-graph padding.
 
 
@@ -857,7 +889,10 @@ def _build_trace_ctx(hardware, model, config, tp_size, pp_size, local_ep, ep_tot
                      placement, gate, enable_attn_offloading, power_model, pim_model, pd_type,
                      variant, kv_cache_dtype='auto',
                      runtime_max_num_batched_tokens=None, runtime_max_num_seqs=None,
-                     tp_dim=None, ep_dim=None, dp_sum_total_len=0):
+                     tp_dim=None, ep_dim=None, dp_sum_total_len=0, ep_rank_offset=0,
+                     ep_hardware=None):
+    # new params: ep_rank_offset = this instance's first global EP rank;
+    # ep_hardware = optional hardware name per local EP rank
     model_type = config.get('model_type')
     if not model_type:
         raise KeyError(
@@ -866,6 +901,13 @@ def _build_trace_ctx(hardware, model, config, tp_size, pp_size, local_ep, ep_tot
         )
     tp_needed = {max(int(tp_size), 1)}
     perf_db = _load_perf_db(hardware, model, variant, tp_needed, model_type)
+    # Heterogeneous EP: each rank's experts cost what its own GPU measured.
+    # Only the MoE lookup is per rank; dense and attention layers use
+    # ``hardware``. MoE is profiled at tp=1, so no TP folder is required.
+    ep_perf_dbs = None                   # default: every rank uses the instance's own profile
+    if ep_hardware:
+        # One profile per rank; set() = no TP folders required. Cached after the first load.
+        ep_perf_dbs = [_load_rank_perf_db(hw, model, variant, model_type) for hw in ep_hardware]
     warn_if_runtime_exceeds_profiled(
         perf_db, runtime_max_num_batched_tokens, runtime_max_num_seqs)
 
@@ -891,6 +933,7 @@ def _build_trace_ctx(hardware, model, config, tp_size, pp_size, local_ep, ep_tot
         pd_type=pd_type,
         tp_size=tp_size, pp_size=pp_size, local_ep=local_ep, ep_total=ep_total,
         tp_dim=tp_dim, ep_dim=ep_dim, dp_sum_total_len=dp_sum_total_len,
+        ep_rank_offset=ep_rank_offset, ep_perf_dbs=ep_perf_dbs,
     )
 
 
@@ -1075,7 +1118,8 @@ def _emit_moe_block(ctx, bctx, lines, power_acc, layer_num, batch_id_str, batch_
     # full padded forward shape. Routing / ``_lookup_moe`` therefore see
     # the same per-rank padded value as every other dense layer.
     effective_total_len_compute = bctx.total_len
-    routing = ctx.gate.route_ep(layer_num, batch_id_str, effective_total_len_compute, ep_total)
+    routing = ctx.gate.route_ep(layer_num, batch_id_str, effective_total_len_compute, ep_total,
+                                batch=bctx.batch)   # new: TRACE routing needs the batch's token positions
 
     # AG/RS comm sizes are anchored to ``dp_sum_total_len``, which
     # ``serving/__main__.py`` sets to ``max_total_len`` (NOT ``max × dp_group_size``)
@@ -1106,10 +1150,12 @@ def _emit_moe_block(ctx, bctx, lines, power_acc, layer_num, batch_id_str, batch_
         combine_comm_size = 0
 
     wt_loc = get_device(ctx.placement, layer_num, "moe", "weights")
+    placement = ctx.gate.placement   # new: ExpertPlacement (owner map, residency, loads owed) or None
 
     # Each local GPU handles exactly one EP rank. The routing result already
     # accounts for cross-instance token redistribution (ALLTOALL), so
     # local_tokens[rank] reflects the post-dispatch workload for that rank.
+    # A DP group member owns global ranks [ep_rank_offset, ep_rank_offset + local_ep).
     emit_ep = max(ctx.local_ep, 1)
     max_rank_latency_ns = 0
 
@@ -1126,26 +1172,68 @@ def _emit_moe_block(ctx, bctx, lines, power_acc, layer_num, batch_id_str, batch_
         # ``local_tokens`` here is the per-rank workload after dispatch
         # — already scaled to this rank's real tokens (no DP-padding sum).
         # We feed it straight into the MoE profile lookup.
-        local_tokens = routing.local_tokens[i]
-        activated_experts = routing.activated_experts[i]
+        rank = ctx.ep_rank_offset + i    # global EP rank of local GPU i (was just i)
+        local_tokens = routing.local_tokens[rank]
+        activated_experts = routing.activated_experts[rank]
 
         if local_tokens > 0:
-            rank_latency_ns = _lookup_moe(ctx.perf_db, local_tokens, max(activated_experts, 1))
+            # This rank's own GPU profile when ep_hardware is set, else the instance's
+            rank_db = ctx.ep_perf_dbs[i] if ctx.ep_perf_dbs else ctx.perf_db
+            # compute_tokens = local_tokens by default, or pairs / k with --moe-rank-cost pairs
+            rank_latency_ns = _lookup_moe(rank_db, routing.compute_tokens[rank],
+                                          max(activated_experts, 1))
+            if placement is not None and routing.reduced_fraction[rank] > 0:
+                # REDUCED experts run at reduced_latency of the profiled time
+                f = routing.reduced_fraction[rank]   # share of this rank's active experts at REDUCED
+                # Blend: (1 - f) of the work at full speed, f at reduced_latency; at least 1 ns
+                rank_latency_ns = max(1, int(rank_latency_ns * (1 - f + f * placement.reduced_latency)))
             rank_inp, rank_wt, rank_out = calculate_sizes(
                 ctx.model, "moe", local_tokens, parallel=ep_total, fp=ctx.fp)
             max_rank_latency_ns = max(max_rank_latency_ns, rank_latency_ns)
 
-            lines.append(formatter("expert", str(rank_latency_ns), 'LOCAL', str(rank_inp),
-                wt_loc, str(rank_wt), 'LOCAL', str(rank_out), 'NONE', '0', batch_tag))
+            # Experts moved to this rank, missed, or raised to a higher tier
+            # are loaded from host memory after the gate, before this rank's
+            # expert compute. Offloaded weights (wt_loc != LOCAL) are loaded
+            # every step anyway.
+            row_loc, row_wt = wt_loc, rank_wt          # default: weights already on the GPU
+            if placement is not None and wt_loc == 'LOCAL':
+                owed = placement.take_loads(layer_num, rank)   # bytes this rank must load now
+                if owed:
+                    # A REMOTE weight on the expert row makes the converter add a host-memory
+                    # load that must finish before this rank's expert compute
+                    row_loc, row_wt = f'REMOTE:{ctx.node_id}', owed
 
-            if power_acc is not None and wt_loc != 'LOCAL':
-                power_acc.dram_weight_bytes += rank_wt
+            lines.append(formatter("expert", str(rank_latency_ns), 'LOCAL', str(rank_inp),
+                row_loc, str(row_wt), 'LOCAL', str(rank_out), 'NONE', '0', batch_tag))
+
+            if power_acc is not None and row_loc != 'LOCAL':
+                power_acc.dram_weight_bytes += row_wt   # loaded bytes count toward DRAM energy
 
     # Power: all local GPUs are active for the duration of the slowest rank
     if power_acc is not None and max_rank_latency_ns > 0:
         power_acc.npu_latencies_ns.append(max_rank_latency_ns)
 
     lines.append(f"EXPERT END {combine_comm_type} {combine_comm_size}\n")
+
+    # Prefetch for the next layer: issued after this block, so it overlaps
+    # the combine and the next layer's attention. MoE block k is layer k
+    # (every layer is MoE).
+    if placement is not None and placement.prefetch_policy != "NONE":
+        next_active = None                   # only ORACLE may see the next layer's real routing
+        if placement.prefetch_policy == "ORACLE" and layer_num + 1 < ctx.config['num_hidden_layers']:
+            # Peek at the experts the next layer will actually use (TRACE routing is deterministic)
+            next_active = np.unique(ctx.gate._assign_experts(
+                layer_num + 1, effective_total_len_compute, bctx.batch))
+        # Bytes each global rank prefetches; also marks those experts resident
+        prefetch = placement.plan_prefetch(layer_num, routing.expert_counts, next_active)
+        for i in range(emit_ep):             # one line per local GPU that prefetches something
+            nbytes = int(prefetch[ctx.ep_rank_offset + i])
+            if nbytes:
+                # PREFETCH <local rank> <target MoE block> <memory loc> <bytes>; the converter
+                # issues the load now and makes block layer_num + 1 wait for it
+                lines.append(f"PREFETCH {i} {layer_num + 1} REMOTE:{ctx.node_id} {nbytes}\n")
+                if power_acc is not None:
+                    power_acc.dram_weight_bytes += nbytes   # prefetched bytes cost DRAM energy too
 
     # Post-expert ReduceScatter power (combine)
     if power_acc is not None and ep_total > 1:
@@ -1355,18 +1443,36 @@ def _emit_prologue(ctx, bctx, f, batch_tag='NONE'):
     return len(lines)
 
 
+def _emit_expert_decision(ctx, f):
+    """Delay the iteration by the expert placement decision time.
+
+    The scheduler decides before the step runs, so nothing in the step can
+    overlap it. The row goes right after the prologue: the first trace row
+    must stay the REMOTE-input embedding the converter loads from host.
+    """
+    placement = ctx.gate.placement if ctx.gate is not None else None   # dense models have no gate
+    if placement is None or placement.decision_ns <= 0:   # nothing decided this iteration
+        return 0                                          # no row written
+    # A compute row with no data: it just occupies the GPU for decision_ns
+    f.write(formatter("expert_placement", str(placement.decision_ns), 'LOCAL', '0',
+                      'LOCAL', '0', 'LOCAL', '0', 'NONE', '0', 'NONE'))
+    return 1                                              # one row written (keeps line counts right)
+
+
 def _synthesize_trace(hardware, model, config, tp_size, pp_size, local_ep, ep_total, pd_type, node_id, instance_id,
                       batch, max_len, output_path, placement, block_mode_on, gate,
                       enable_attn_offloading, power_model, pim_model, fp,
                       variant, kv_cache_dtype='auto',
                       runtime_max_num_batched_tokens=None, runtime_max_num_seqs=None,
-                      tp_dim=None, ep_dim=None, dp_sum_total_len=0):
+                      tp_dim=None, ep_dim=None, dp_sum_total_len=0, ep_rank_offset=0,
+                      ep_hardware=None):
     ctx = _build_trace_ctx(hardware, model, config, tp_size, pp_size, local_ep, ep_total, node_id, fp,
                            placement, gate, enable_attn_offloading, power_model, pim_model, pd_type,
                            variant=variant, kv_cache_dtype=kv_cache_dtype,
                            runtime_max_num_batched_tokens=runtime_max_num_batched_tokens,
                            runtime_max_num_seqs=runtime_max_num_seqs,
-                           tp_dim=tp_dim, ep_dim=ep_dim, dp_sum_total_len=dp_sum_total_len)
+                           tp_dim=tp_dim, ep_dim=ep_dim, dp_sum_total_len=dp_sum_total_len,
+                           ep_rank_offset=ep_rank_offset, ep_hardware=ep_hardware)
     bctx = _build_batch_ctx(batch, ctx)
 
     logger.info(
@@ -1382,19 +1488,24 @@ def _synthesize_trace(hardware, model, config, tp_size, pp_size, local_ep, ep_to
 
     with open(output_path, 'w') as f:
         written = _emit_prologue(ctx, bctx, f)
+        written += _emit_expert_decision(ctx, f)   # new: charge the placement decision time
 
         # Transformer blocks
         num_layers = config['num_hidden_layers']
-        iter_count, copy_count = (num_layers, 1) if block_mode_on else (1, num_layers)
+        # MoE blocks are only safely replayable when the router
+        # opts into block copy (BALANCED is deterministic; others
+        # carry tiny per-layer variance that block_copy swallows
+        # for the sake of trace-generation speed). Without a copy,
+        # every layer is built on its own.
+        # Decided before the loop (it used to be inside, after the layer count was
+        # already fixed, so a disabled copy emitted only ONE layer: that was the bug)
+        can_copy = (not ctx.is_moe or ctx.gate.block_copy) and not block_mode_on
+        # Copy: build 1 block and write it num_layers times. No copy: build every layer once.
+        iter_count, copy_count = (1, num_layers) if can_copy else (num_layers, 1)
 
         for layer_num in range(iter_count):
             block_lines, block_power = _build_transformer_block(ctx, bctx, layer_num, 'NONE', str(batch.batch_id))
 
-            # MoE blocks are only safely replayable when the router
-            # opts into block copy (BALANCED is deterministic; others
-            # carry tiny per-layer variance that block_copy swallows
-            # for the sake of trace-generation speed).
-            can_copy = (not ctx.is_moe or ctx.gate.block_copy) and not block_mode_on
             if can_copy:
                 for _ in range(copy_count):
                     block_starts.append(written)
@@ -1423,13 +1534,15 @@ def _synthesize_interleaved_trace(hardware, model, config, tp_size, pp_size, loc
                                   enable_attn_offloading, power_model, pim_model, fp,
                                   variant, kv_cache_dtype='auto',
                                   runtime_max_num_batched_tokens=None, runtime_max_num_seqs=None,
-                                  tp_dim=None, ep_dim=None, dp_sum_total_len=0):
+                                  tp_dim=None, ep_dim=None, dp_sum_total_len=0, ep_rank_offset=0,
+                                  ep_hardware=None):
     ctx = _build_trace_ctx(hardware, model, config, tp_size, pp_size, local_ep, ep_total, node_id, fp,
                            placement, gate, enable_attn_offloading, power_model, pim_model, pd_type,
                            variant=variant, kv_cache_dtype=kv_cache_dtype,
                            runtime_max_num_batched_tokens=runtime_max_num_batched_tokens,
                            runtime_max_num_seqs=runtime_max_num_seqs,
-                           tp_dim=tp_dim, ep_dim=ep_dim, dp_sum_total_len=dp_sum_total_len)
+                           tp_dim=tp_dim, ep_dim=ep_dim, dp_sum_total_len=dp_sum_total_len,
+                           ep_rank_offset=ep_rank_offset, ep_hardware=ep_hardware)
     bctx1 = _build_batch_ctx(batches[0], ctx)
     bctx2 = _build_batch_ctx(batches[1], ctx)
 
@@ -1469,7 +1582,14 @@ def _synthesize_interleaved_trace(hardware, model, config, tp_size, pp_size, loc
 
         # MIDDLE LAYERS: interleaved post_attn + pre_attn
         middle_layers = num_layers - 1
-        iter_count, copy_count = (middle_layers, 1) if block_mode_on else (1, middle_layers)
+        # MoE blocks are only safely replayable when the router
+        # opts into block copy (BALANCED is deterministic; others
+        # carry tiny per-layer variance that block_copy swallows
+        # for the sake of trace-generation speed). Without a copy,
+        # every layer is built on its own.
+        # Same fix as in _synthesize_trace: decide before choosing the loop counts
+        can_copy = (not ctx.is_moe or ctx.gate.block_copy) and not block_mode_on
+        iter_count, copy_count = (1, middle_layers) if can_copy else (middle_layers, 1)
 
         for layer_num in range(iter_count):
             block_lines = []
@@ -1483,11 +1603,6 @@ def _synthesize_interleaved_trace(hardware, model, config, tp_size, pp_size, loc
             _emit_post_attn_layers(ctx, bctx2, layer_num, block_lines, block_power, f"{batches[1].batch_id}.1", 'BATCH_2')
             _emit_pre_attn_layers(ctx, bctx2, layer_num + 1, block_lines, block_power, 'BATCH_2')
 
-            # MoE blocks are only safely replayable when the router
-            # opts into block copy (BALANCED is deterministic; others
-            # carry tiny per-layer variance that block_copy swallows
-            # for the sake of trace-generation speed).
-            can_copy = (not ctx.is_moe or ctx.gate.block_copy) and not block_mode_on
             if can_copy:
                 for _ in range(copy_count):
                     f.writelines(block_lines)
@@ -1576,7 +1691,15 @@ def generate_trace(batch, hardware, tp_size, pp_size, local_ep, ep_total, pd_typ
                    placement={}, block_mode_on=False, expert_routing_policy="BALANCED",
                    enable_prefix_caching=False, enable_attn_offloading=False, power_model=None, pim_model=None,
                    enable_sub_batch_interleaving=False, fp=16, dtype=None, kv_cache_dtype='auto',
-                   tp_dim=None, ep_dim=None, dp_sum_total_len=0, enable_block_copy=True, inputs_root=None):
+                   tp_dim=None, ep_dim=None, dp_sum_total_len=0, enable_block_copy=True, inputs_root=None,
+                   expert_placement=None, routing_trace=None, ep_rank_offset=0,
+                   moe_rank_cost="tokens", ep_hardware=None):
+    # New params (all default to the original behaviour):
+    #   expert_placement  ExpertPlacement shared across iterations (placement, residency, loads)
+    #   routing_trace     RoutingTrace for --expert-routing-policy TRACE
+    #   ep_rank_offset    global EP rank of this instance's first GPU (DP groups)
+    #   moe_rank_cost     "tokens" or "pairs" (--moe-rank-cost)
+    #   ep_hardware       hardware name per local EP rank (cluster config)
 
     model = batch.model
     config = get_config(model)
@@ -1600,13 +1723,23 @@ def generate_trace(batch, hardware, tp_size, pp_size, local_ep, ep_total, pd_typ
     # key or the HF/Qwen3 ``num_experts`` key so both family's configs
     # resolve to a live GateRouter.
     num_experts_cfg = config.get("num_local_experts", config.get("num_experts"))
+    # ``expert_placement`` (an ExpertPlacement) and ``routing_trace`` persist
+    # across iterations in serving/__main__.py; the router itself is rebuilt
+    # each call.
     if num_experts_cfg:
+        if routing_trace is not None:
+            # Refuse a trace recorded for a different model shape
+            routing_trace.check(config['num_hidden_layers'], num_experts_cfg,
+                                config.get('num_experts_per_tok', 1))
         gate = GateRouter(
             node_id, instance_id, num_experts_cfg,
             num_experts_per_tok=config.get('num_experts_per_tok', 1),
             routing_policy=expert_routing_policy,
             seed=42,
             block_copy=enable_block_copy,
+            placement=expert_placement,      # new: owner map and residency state
+            routing_trace=routing_trace,     # new: recorded routing for TRACE
+            rank_cost=moe_rank_cost,         # new: how per-rank MoE cost is looked up
         )
     else:
         gate = None
@@ -1627,7 +1760,8 @@ def generate_trace(batch, hardware, tp_size, pp_size, local_ep, ep_total, pd_typ
                         variant=variant, kv_cache_dtype=kv_cache_dtype,
                         runtime_max_num_batched_tokens=max_num_batched_tokens,
                         runtime_max_num_seqs=max_num_seqs,
-                        tp_dim=tp_dim, ep_dim=ep_dim, dp_sum_total_len=dp_sum_total_len)
+                        tp_dim=tp_dim, ep_dim=ep_dim, dp_sum_total_len=dp_sum_total_len,
+                        ep_rank_offset=ep_rank_offset, ep_hardware=ep_hardware)
     if not enable_sub_batch_interleaving:
         block_starts = _synthesize_trace(*synth_args, batch, max_len, output_path, **synth_kwargs)
     else:
@@ -1689,7 +1823,9 @@ def generate_trace(batch, hardware, tp_size, pp_size, local_ep, ep_total, pd_typ
 
         # add layer_number at the end of the layer_name
         for i in range(0, len(result)):
-            if "EXPERT" not in result[i][0] and "PIM" not in result[i][0]:
+            # Marker lines (EXPERT/PIM, and the new PREFETCH) keep their text as-is;
+            # every other row gets its line number appended to its name
+            if result[i][0] not in ("EXPERT", "PIM", "PREFETCH"):
                 new_string = f'{result[i][0]}_{i}'
                 f.write(formatter(new_string, *result[i][1:]))
             else:

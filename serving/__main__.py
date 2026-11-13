@@ -7,6 +7,8 @@ spawns the ASTRA-Sim subprocess, and runs the iteration loop:
 """
 
 import os
+import csv               # new: writes the --iteration-output CSV
+import yaml              # new: reads the generated network config (congestion backend check)
 import subprocess
 import argparse
 import json
@@ -27,6 +29,11 @@ from serving.core.router import *
 from serving.core.power_model import *
 from serving.core.logger import *
 from serving.core.run_paths import build_run_paths, resolve_run_id
+from serving.core.expert_placement import ExpertPlacement, expert_weight_bytes   # new: expert state + expert size
+from serving.core.gate_function import load_routing_trace                          # new: opens a routing trace once
+from serving.core.dsa_scheduler import DSAScheduler                                # the team's DSA scheduler
+from serving.core.hobbit_policy import HobbitPolicy                                # HOBBIT-style baseline
+from serving.core.trace_generator import resolve_variant, _load_perf_db, _load_rank_perf_db, _lookup_moe   # DSA: per-GPU latency
 import sys as flush
 
 from pyinstrument import Profiler
@@ -254,13 +261,100 @@ def main():
                         help='request routing policy across instances: LOAD (vLLM-style weighted least-loaded, default), '
                         'RR (round-robin), RAND (random), CUSTOM (user-defined)')
     parser.add_argument('--expert-routing-policy', type=str,
-                        choices=['BALANCED', 'RR', 'RAND', 'CUSTOM'],
+                        choices=['BALANCED', 'RR', 'RAND', 'TRACE', 'CUSTOM'],   # TRACE is new
                         default='BALANCED',
                         help='expert token routing policy for MoE models: '
                         'BALANCED (default; analytical pigeonhole approximation of '
                         'a trained load-balanced learned gate), '
                         'RR (round-robin), RAND (uniform random per token), '
-                        'CUSTOM (user-defined)')
+                        'TRACE (replay recorded router decisions from --expert-routing-trace; '
+                        'disables block copy), CUSTOM (user-defined)')
+    # ---- New expert flags. Their defaults reproduce the original simulator exactly:
+    # routing trace (A2), placement (A1, baselines), migration cost (A6), memory pressure
+    # and precision tiers (A4), prefetch (C13), decision time (C15), rank cost.
+    parser.add_argument('--expert-routing-trace', type=str, default=None,
+                        help='routing trace (.npz) replayed by --expert-routing-policy TRACE, '
+                        'captured from the same workload file as --dataset')
+    parser.add_argument('--expert-placement-policy', type=str,
+                        choices=['EVEN', 'POPULARITY', 'SWAP', 'DSA', 'CUSTOM'], default='EVEN',
+                        help='expert -> EP rank placement for MoE models, recomputed every '
+                        '--expert-placement-interval iterations from routing observed in earlier '
+                        'iterations: EVEN (default; contiguous even split, never changes), '
+                        'POPULARITY (greedy packing of observed per-expert load, rebuilds the whole '
+                        'map), SWAP (incremental: up to --expert-placement-max-swaps hot/cold swaps '
+                        'per layer), CUSTOM (user-defined). A moved expert is loaded from host '
+                        'memory (cpu_mem.mem_bw) on its new rank before its next expert compute')
+    parser.add_argument('--expert-placement-interval', type=int, default=1,
+                        help='re-place experts every N iterations (load is tracked every iteration)')
+    parser.add_argument('--expert-placement-max-swaps', type=int, default=1,
+                        help='SWAP placement: most expert swaps per layer per re-placement')
+    parser.add_argument('--charge-expert-migration', action=argparse.BooleanOptionalAction,
+                        default=True,
+                        help='charge a weight load for every expert placement moves (default). '
+                        '--no-charge-expert-migration makes moves free, to bound what placement '
+                        'can gain')
+    parser.add_argument('--expert-memory-fraction', type=float, default=1.0,
+                        help='share of each EP rank\'s expert weights (full precision) that fits on '
+                        'the NPU (default 1.0: all resident). Below 1, the rest stay in host memory, '
+                        'a token routed to one is a miss fetched at cpu_mem.mem_bw, and the freed '
+                        'memory goes to KV cache. Needs per-token routing (not BALANCED)')
+    parser.add_argument('--expert-residency-policy', type=str,
+                        choices=['LRU', 'FREQUENCY', 'QUANTIZED', 'HOBBIT', 'DSA', 'CUSTOM'],
+                        default='LRU',
+                        help='which experts stay on the NPU: LRU (default; reactive cache at full '
+                        'precision, evicting the least recently used), FREQUENCY (evict the lowest '
+                        'observed load, and refill each rank with its highest-load experts every '
+                        're-placement), QUANTIZED (every expert at REDUCED precision, LRU when even '
+                        'those do not fit), DSA (the DSA scheduler) or CUSTOM (user-defined tiers FULL / REDUCED / HOST each '
+                        're-placement, LRU evicting what does not fit)')
+    parser.add_argument('--expert-reduced-bytes', type=float, default=0.5,
+                        help='size of a REDUCED-precision expert relative to full (default 0.5, int8 '
+                        'from 16-bit)')
+    parser.add_argument('--expert-reduced-latency', type=float, default=1.0,
+                        help='compute time of a REDUCED expert relative to the profiled one (default '
+                        '1.0: no speedup assumed until profiled)')
+    parser.add_argument('--expert-prefetch-policy', type=str, choices=['NONE', 'ORACLE', 'CUSTOM'],
+                        default='NONE',
+                        help='load experts of the next layer ahead of time, overlapping the current '
+                        'layer\'s combine and the next layer\'s attention: NONE (default), ORACLE '
+                        '(the next layer\'s real misses: perfect-predictor bound, TRACE routing only) '
+                        'or CUSTOM (user-defined). Only matters with --expert-memory-fraction < 1')
+    parser.add_argument('--expert-prefetch-accuracy', type=float, default=1.0,
+                        help='ORACLE prefetch: probability each correct expert is kept; the rest are '
+                        'swapped for wrong ones (default 1.0)')
+    # DSA scheduler settings (serving/core/dsa_scheduler.py); used when a policy above is DSA
+    parser.add_argument('--hobbit-t1', type=float, default=0.6,
+                        help='HOBBIT baseline: unimportance threshold for loading a missed expert at '
+                        'high precision (default 0.6, the paper\'s Mixtral value)')
+    parser.add_argument('--hobbit-high-cache', type=float, default=0.75,
+                        help='HOBBIT baseline: share of the expert memory budget given to the '
+                        'high-precision cache; the rest holds low-precision copies (default 0.75)')
+    parser.add_argument('--dsa-alpha', type=float, default=0.3,
+                        help='DSA stage A: EWMA smoothing factor (default 0.3)')
+    parser.add_argument('--dsa-hedge-eta', type=float, default=1.0,
+                        help='DSA stage B: Hedge learning rate (default 1.0)')
+    parser.add_argument('--dsa-horizon', type=int, default=20,
+                        help='DSA stage D: iterations a new placement is expected to last (default 20)')
+    parser.add_argument('--dsa-switch-threshold-ns', type=float, default=100_000,
+                        help='DSA stage D: minimum net gain to migrate, in ns (default 0.1 ms)')
+    parser.add_argument('--dsa-bands', type=str, default='0.7,0.3,0.1',
+                        help='DSA stage E: sensitivity thresholds FULL,REDUCED,EVICT (default 0.7,0.3,0.1)')
+    parser.add_argument('--dsa-max-imbalance', type=float, default=0.0,
+                        help='DSA stage C: a GPU may own up to (1 + x) times its even share of experts '
+                        'per layer, within what its memory holds at REDUCED size (default 0: equal). '
+                        'Needs --expert-residency-policy DSA')
+    parser.add_argument('--dsa-quality-fill', action=argparse.BooleanOptionalAction, default=False,
+                        help='DSA stage E: spend spare expert memory on FULL precision too, not only on '
+                        'keeping experts resident at REDUCED (default off)')
+    parser.add_argument('--expert-placement-overhead', type=str, default='measured',
+                        help='time charged to an iteration whose expert placement was recomputed: '
+                        '"measured" (default; wall clock of the policy in this process) or a fixed '
+                        'value in ns. EVEN never recomputes, so it is never charged')
+    parser.add_argument('--moe-rank-cost', type=str, choices=['tokens', 'pairs'], default='tokens',
+                        help='token count an EP rank\'s MoE latency is looked up with: tokens '
+                        '(default; tokens that reached the rank) or pairs (local (token, expert) '
+                        'pairs / top-k, so a token hitting one local expert costs less than one '
+                        'hitting k). pairs is not yet validated against vLLM')
     parser.add_argument('--enable-block-copy', action=argparse.BooleanOptionalAction,
                         default=True,
                         help='Replay one transformer block\'s trace across every '
@@ -321,6 +415,11 @@ def main():
                         'to preserve generated trace files, Chakra workloads, and input configs for debugging')
     parser.add_argument('--skip-prefill', action='store_true', default=False,
                         help='skip the prefill phase, running decode only')
+    # New (B8): per-batch timing and expert-traffic CSV
+    parser.add_argument('--iteration-output', type=str, default=None,
+                        help='write one CSV row per NPU per batch: time span, GPU compute, non-compute '
+                        'time (communication, memory loads, idle), batch shape and expert weight '
+                        'traffic. Off by default; {run_id} is replaced like in --output')
     parser.add_argument('--num-reqs', type=int, default=0,
                         help='number of entries (requests or sessions) to load from the dataset. '
                         'For agentic datasets, each entry is a session with multiple sub-requests. '
@@ -333,8 +432,12 @@ def main():
                         help='KV cache data type: auto (inherit --dtype) or fp8. Selects the profile '
                         'variant folder -- fp8 resolves to <dtype>-kvfp8, e.g. bf16-kvfp8 -- and '
                         'halves KV cache memory. Override per instance with "kv_cache_dtype"')
-    parser.add_argument('--network-backend', type=str, choices=['analytical', 'ns3'], default='analytical',
-                        help='network simulation backend: analytical (fast, default) or ns3 (detailed, WIP)')
+    parser.add_argument('--network-backend', type=str,
+                        choices=['analytical', 'analytical-congestion', 'ns3'], default='analytical',   # new choice (C14)
+                        help='network simulation backend: analytical (fast, default; transfers sharing '
+                        'a link do not slow each other), analytical-congestion (links are shared: '
+                        'concurrent transfers split bandwidth; 1-D topologies only, i.e. a single '
+                        'instance without DP groups) or ns3 (detailed, WIP)')
 
     args = parser.parse_args()
     
@@ -342,6 +445,7 @@ def main():
     run_paths = build_run_paths(astra_sim, args.run_id, args.inputs_root)
     args.inputs_root = run_paths.inputs_root
     args.output = _resolve_output_file(args.output, args.run_id)
+    args.iteration_output = _resolve_output_file(args.iteration_output, args.run_id)   # fill in {run_id}
 
     configure_logger(level=args.log_level)
     logger = get_logger("Main")
@@ -395,6 +499,19 @@ def main():
     if network_backend == 'analytical':
         network=run_paths.network_config
         binary=os.path.join(astra_sim, "build/astra_analytical/build/AnalyticalAstra/bin/AnalyticalAstra")
+    elif network_backend == 'analytical-congestion':   # new (C14): links shared between transfers
+        network=run_paths.network_config               # same network file as 'analytical'
+        with open(network) as f:
+            network_dims = yaml.safe_load(f)["npus_count"]   # one entry per network dimension
+        # ASTRA-Sim's congestion-aware model only handles 1-D networks; fail clearly
+        # here instead of letting the C++ binary exit with a cryptic message
+        if len(network_dims) != 1:
+            raise ValueError(
+                f"--network-backend analytical-congestion supports 1-D topologies only, but this "
+                f"cluster generates {len(network_dims)} dimensions {network_dims} (multiple "
+                f"instances or DP groups). Use --network-backend analytical.")
+        # The congestion-aware build of ASTRA-Sim (already compiled in the container)
+        binary=os.path.join(astra_sim, "build/astra_analytical/build/bin/AstraSim_Analytical_Congestion_Aware")
     elif network_backend == 'ns3':
         network=_prepare_ns3_config(astra_sim, run_paths)
         binary=os.path.join(astra_sim, "extern/network_backend/ns-3/build/scratch/ns3.42-AstraSimNetwork-default")
@@ -504,6 +621,7 @@ def main():
             kv_cache_dtype=inst_cfg["kv_cache_dtype"],
             npu_memory_utilization=inst_cfg["npu_memory_utilization"],
             reserve_full_isl=inst_cfg["reserve_full_isl"],
+            expert_memory_fraction=args.expert_memory_fraction,   # new: sizes expert weight vs KV cache
         ))
 
     # The derived KV capacity, not the utilization fraction, is what decides
@@ -610,6 +728,147 @@ def main():
     # Pre-generated workloads ready to submit on next "Waiting"
     dp_ready_workloads = {}  # instance_id -> workload_path
 
+    # Expert placement persists across iterations: one object per instance,
+    # shared by a DP group because EP spans the group.
+    routing_trace = None                 # only TRACE routing uses one
+    if expert_routing_policy == 'TRACE':
+        if args.expert_routing_trace is None:     # TRACE without a file has nothing to replay
+            raise ValueError("--expert-routing-policy TRACE needs --expert-routing-trace")
+        # '../' because the simulator runs from astra-sim/, while paths are given from the repo root
+        routing_trace = load_routing_trace(f'../{args.expert_routing_trace}')
+    # None = measure the real decision time; otherwise a fixed number of ns
+    placement_overhead_ns = (None if args.expert_placement_overhead == 'measured'
+                             else int(args.expert_placement_overhead))
+    expert_placements = {}  # instance_id -> ExpertPlacement (MoE instances only)
+    shared_placements = {}  # instance or DP-group name -> ExpertPlacement (each object once)
+
+    def _dsa_inputs(inst, model_cfg, num_experts):
+        """Settings and measured inputs for DSAScheduler."""
+        # Every instance sharing this placement (a DP group, or just this one), in EP-rank order
+        members = sorted((m for m in instances
+                          if (m.get("dp_group") or f'instance{m["instance_id"]}')
+                          == (inst.get("dp_group") or f'instance{inst["instance_id"]}')),
+                         key=lambda m: m["dp_rank"])
+        experts_per_rank = num_experts // inst["ep_total"]
+        top_k = model_cfg.get("num_experts_per_tok", 1)
+        ref_tokens = 128                  # reference batch for the per-pair latency estimate
+        latency = []
+        for m in members:
+            cfg = instance_runtime_configs[m["instance_id"]]
+            variant = resolve_variant(cfg["dtype"], cfg["kv_cache_dtype"], model_cfg)
+            for hw in m.get("ep_hardware") or [m["hardware"]] * m["local_ep"]:   # one per GPU
+                db = _load_rank_perf_db(hw, m["model_name"], variant, model_cfg["model_type"])
+                # Profiled MoE time for ref_tokens tokens over this rank's experts, per (token, expert) pair
+                t_ns = _lookup_moe(db, ref_tokens, min(experts_per_rank, ref_tokens * top_k))
+                latency.append(t_ns / (ref_tokens * top_k))
+        node_cpu = raw_cluster_config["nodes"][inst["node_id"]]["cpu_mem"]   # this node's host memory
+        return dict(rank_latency_ns=latency,
+                    host_bw=float(node_cpu["mem_bw"]),         # GB/s = bytes per ns
+                    alpha=args.dsa_alpha, hedge_eta=args.dsa_hedge_eta, horizon=args.dsa_horizon,
+                    switch_threshold_ns=args.dsa_switch_threshold_ns,
+                    bands=tuple(float(b) for b in args.dsa_bands.split(',')),
+                    quality_fill=args.dsa_quality_fill,
+                    max_imbalance=args.dsa_max_imbalance)
+    for inst in instances:
+        model_cfg = get_config(inst["model_name"])
+        num_experts = model_cfg.get("num_local_experts", model_cfg.get("num_experts"))
+        if not num_experts:              # dense model: no experts to place
+            continue
+        # Reject flag combinations the new code does not support, before the run starts
+        if args.expert_prefetch_policy != 'NONE':
+            if args.expert_prefetch_policy == 'ORACLE' and expert_routing_policy != 'TRACE':
+                raise ValueError("--expert-prefetch-policy ORACLE reads the next layer's routing "
+                                 "and needs --expert-routing-policy TRACE")
+            # The converter's PREFETCH support covers the colocated, single-stage path only
+            if (inst["pp_size"] > 1 or inst["pd_type"] is not None
+                    or instance_runtime_configs[inst["instance_id"]]["enable_sub_batch_interleaving"]):
+                raise ValueError("Expert prefetch supports only pp_size 1, no prefill/decode "
+                                 "disaggregation and no sub-batch interleaving")
+        if ((args.expert_placement_policy != 'EVEN' or args.expert_residency_policy != 'LRU')
+                and instance_runtime_configs[inst["instance_id"]]["enable_sub_batch_interleaving"]):
+            raise ValueError(
+                "An expert placement policy other than EVEN, or a residency policy other than "
+                "LRU, is not supported with --enable-sub-batch-interleaving: the decision has to "
+                "delay both sub-batches, which the interleaved trace cannot express")
+        # DP group members share one object (EP spans the group); other instances get their own
+        key = inst.get("dp_group") or f'instance{inst["instance_id"]}'
+        if key not in shared_placements:
+            # DSA needs extra inputs: per-GPU expert latency (from the profiles) and host bandwidth
+            dsa = 'DSA' in (args.expert_placement_policy, args.expert_residency_policy)
+            extra = _dsa_inputs(inst, model_cfg, num_experts) if dsa else {}
+            cls = DSAScheduler if dsa else ExpertPlacement
+            if args.expert_residency_policy == 'HOBBIT':   # HOBBIT-style baseline (not combinable with DSA)
+                if dsa:
+                    raise ValueError('HOBBIT residency cannot be combined with a DSA policy')
+                cls, extra = HobbitPolicy, dict(t1=args.hobbit_t1, high_cache=args.hobbit_high_cache)
+            shared_placements[key] = cls(
+                model_cfg["num_hidden_layers"], num_experts, inst["ep_total"],   # layers, experts, ranks
+                # one expert's size; fp is in bits, so // 8 gives bytes per element
+                expert_weight_bytes(model_cfg, instance_runtime_configs[inst["instance_id"]]["fp"] // 8),
+                policy=args.expert_placement_policy, overhead_ns=placement_overhead_ns,
+                interval=args.expert_placement_interval,
+                max_swaps=args.expert_placement_max_swaps,
+                charge_migration=args.charge_expert_migration,
+                memory_fraction=args.expert_memory_fraction,
+                residency_policy=args.expert_residency_policy,
+                reduced_bytes=args.expert_reduced_bytes,
+                reduced_latency=args.expert_reduced_latency,
+                prefetch_policy=args.expert_prefetch_policy,
+                prefetch_accuracy=args.expert_prefetch_accuracy,
+                node_id=inst["node_id"], instance_id=inst["instance_id"], **extra)
+        expert_placements[inst["instance_id"]] = shared_placements[key]   # look-up by instance id
+
+    def begin_expert_iteration(inst_id):
+        """Let the instance's placement policies decide, just before its next trace is built."""
+        placement_state = expert_placements.get(inst_id)
+        if placement_state is not None:           # dense models have none
+            placement_state.begin_iteration(current)   # current = simulated time now
+
+    # Per-iteration CSV (--iteration-output). ASTRA-Sim reports, per NPU and
+    # batch, the current time and that time minus all GPU compute so far, both
+    # cumulative. A row runs from when the batch was scheduled to when this NPU
+    # finished it; compute is the difference from the NPU's previous report,
+    # and the rest is communication, memory loads and synchronization waits
+    # (idle time between batches has no compute and falls outside the row).
+    iteration_file = iteration_writer = None   # stay None when the flag is not given
+    if args.iteration_output:
+        # Relative paths are from the repo root; the simulator runs inside astra-sim/
+        iteration_path = (args.iteration_output if os.path.isabs(args.iteration_output)
+                          else f'../{args.iteration_output}')
+        if os.path.dirname(iteration_path):     # create the output folder if needed
+            os.makedirs(os.path.dirname(iteration_path), exist_ok=True)
+        iteration_file = open(iteration_path, 'w', newline='')
+        iteration_writer = csv.writer(iteration_file)
+        iteration_writer.writerow([                # header row
+            'instance id', 'npu', 'batch id', 'start_ns', 'end_ns', 'duration_ns', 'compute_ns',
+            'non_compute_ns',
+            'requests', 'prefill', 'decode', 'tokens',
+            'expert_loaded_bytes', 'expert_moved_bytes', 'expert_prefetched_bytes',
+            'expert_misses', 'placement_decision_ns'])
+    batch_stats = {}       # (instance id, batch id) -> batch columns
+    last_report = {}       # npu -> cumulative compute_ns at its previous report
+    written_reports = set()  # (npu, iteration) already written: a report can be read more than once
+
+    def expert_counters(inst_id):
+        """Running expert-traffic totals; their change across one trace = that batch's traffic."""
+        pl = expert_placements.get(inst_id)
+        if pl is None:                            # dense model: no expert traffic
+            return (0.0, 0.0, 0.0, 0)
+        return (pl.loaded_bytes, pl.moved_bytes, pl.prefetched_bytes, pl.misses)
+
+    def note_batch(inst_id, batch, before):
+        """Record a batch's shape and the expert traffic its trace charged."""
+        if iteration_writer is None:              # CSV not requested: keep nothing
+            return
+        after = expert_counters(inst_id)
+        pl = expert_placements.get(inst_id)
+        # Kept until ASTRA-Sim reports this batch finished, then written as a row
+        batch_stats[(inst_id, batch.batch_id)] = [
+            # when the batch was scheduled, and its shape
+            batch.batch_time, len(batch.requests), batch.num_prefill, batch.num_decode, batch.total_len,
+            *[int(a - b) for a, b in zip(after, before)],   # traffic this batch's trace charged
+            pl.decision_ns if pl is not None else 0]        # decision time charged to it
+
     # ----------------------------------- Start simulation loop ------------------------------------
     print_markup("[sim.heading]▶ Starting simulation...[/]\n")
     flush.stdout.flush()
@@ -631,6 +890,20 @@ def main():
 
         instance_id = npu2inst_mapping[sys]  # get instance id from NPU id
         node_id = inst2node_mapping[instance_id] # get node id from instance id
+
+        # New (B8): one CSV row each time an NPU reports a finished batch
+        if iteration_writer is not None and out_dict is not None and (sys, id) not in written_reports:
+            written_reports.add((sys, id))
+            compute_total = out_dict['cycle'] - out_dict['exposed']   # this NPU's compute so far (cumulative)
+            prev_compute = last_report.get(sys, 0)                    # ... as of its previous report
+            stats = batch_stats.get((instance_id, id - 1))  # ASTRA-Sim iteration id = batch id + 1
+            if stats is not None:                 # skip reports with no recorded batch (e.g. start-up)
+                start, rest = stats[0], stats[1:]
+                duration = out_dict['cycle'] - start       # scheduled -> finished on this NPU
+                compute = compute_total - prev_compute     # GPU compute since the previous report
+                iteration_writer.writerow([instance_id, sys, id - 1, start, out_dict['cycle'],
+                                           duration, compute, duration - compute, *rest])
+            last_report[sys] = compute_total      # baseline for this NPU's next report
 
         # add stanby energy consumption for power modeling
         if power_modeling and sys == inst2npu_mapping[instance_id] and waiting_request[instance_id]:
@@ -708,10 +981,13 @@ def main():
                     first_batch = dp_pending[dg][first_inst_id][0]
                     dp_workload_name = f'{instances[first_inst_id]["hardware"]}/{instances[first_inst_id]["model_name"]}/dp_{dg}_batch{first_batch.batch_id}'
 
+                    # One decision per DP wave (the group shares one placement object)
+                    begin_expert_iteration(first_inst_id)
                     for inst_id in dp_groups[dg]:
                         batch, nid = dp_pending[dg][inst_id]
                         inst = instances[inst_id]
                         inst_cfg = instance_runtime_configs[inst_id]
+                        counters_before = expert_counters(inst_id)   # traffic totals before this trace
                         generate_trace(batch, inst["hardware"], inst["tp_size"], inst["pp_size"],
                                        inst["local_ep"], inst["ep_total"], inst["pd_type"],
                                        nid, inst_id,
@@ -725,7 +1001,14 @@ def main():
                                        tp_dim=inst.get("tp_dim"), ep_dim=inst.get("ep_dim"),
                                        dp_sum_total_len=sum_total_len,
                                        enable_block_copy=inst_cfg["enable_block_copy"],
-                                       inputs_root=run_paths.inputs_root)
+                                       inputs_root=run_paths.inputs_root,
+                                       expert_placement=expert_placements.get(inst_id),
+                                       routing_trace=routing_trace,
+                                       # this member's first global EP rank
+                                       ep_rank_offset=inst["dp_rank"] * inst["local_ep"],
+                                       moe_rank_cost=args.moe_rank_cost,
+                                       ep_hardware=inst.get("ep_hardware"))
+                        note_batch(inst_id, batch, counters_before)   # record it for --iteration-output
                         generate_graph(batch, inst["hardware"], inst["num_npus"], nid,
                                        inst_id, inst2npu_mapping[inst_id],
                                        inst_cfg["enable_local_offloading"],
@@ -775,10 +1058,13 @@ def main():
                         first_batch = dp_pending[dg][first_inst_id][0]
                         dp_workload_name = f'{instances[first_inst_id]["hardware"]}/{instances[first_inst_id]["model_name"]}/dp_{dg}_batch{first_batch.batch_id}'
 
+                        # One decision per DP wave (the group shares one placement object)
+                        begin_expert_iteration(first_inst_id)
                         for inst_id in dp_groups[dg]:
                             batch, nid = dp_pending[dg][inst_id]
                             inst = instances[inst_id]
                             inst_cfg = instance_runtime_configs[inst_id]
+                            counters_before = expert_counters(inst_id)   # traffic totals before this trace
                             generate_trace(batch, inst["hardware"], inst["tp_size"], inst["pp_size"],
                                            inst["local_ep"], inst["ep_total"], inst["pd_type"],
                                            nid, inst_id,
@@ -792,7 +1078,14 @@ def main():
                                            tp_dim=inst.get("tp_dim"), ep_dim=inst.get("ep_dim"),
                                            dp_sum_total_len=sum_total_len,
                                            enable_block_copy=inst_cfg["enable_block_copy"],
-                                           inputs_root=run_paths.inputs_root)
+                                           inputs_root=run_paths.inputs_root,
+                                           expert_placement=expert_placements.get(inst_id),
+                                           routing_trace=routing_trace,
+                                           # this member's first global EP rank
+                                           ep_rank_offset=inst["dp_rank"] * inst["local_ep"],
+                                           moe_rank_cost=args.moe_rank_cost,
+                                           ep_hardware=inst.get("ep_hardware"))
+                            note_batch(inst_id, batch, counters_before)   # record it for --iteration-output
                             generate_graph(batch, inst["hardware"], inst["num_npus"], nid,
                                            inst_id, inst2npu_mapping[inst_id],
                                            inst_cfg["enable_local_offloading"],
@@ -816,6 +1109,8 @@ def main():
                 else:
                     # Independent instance: generate trace immediately
                     inst_cfg = instance_runtime_configs[instance_id]
+                    begin_expert_iteration(instance_id)              # policies decide before the trace
+                    counters_before = expert_counters(instance_id)   # traffic totals before this trace
                     generate_trace(new_req, instance["hardware"], instance["tp_size"], instance["pp_size"],
                                    instance["local_ep"], instance["ep_total"],
                                    instance["pd_type"],
@@ -828,7 +1123,12 @@ def main():
                                    dtype=inst_cfg["dtype"], kv_cache_dtype=inst_cfg["kv_cache_dtype"],
                                    tp_dim=instance["tp_dim"], ep_dim=instance["ep_dim"],
                                    enable_block_copy=inst_cfg["enable_block_copy"],
-                                   inputs_root=run_paths.inputs_root)
+                                   inputs_root=run_paths.inputs_root,
+                                   expert_placement=expert_placements.get(instance_id),
+                                   routing_trace=routing_trace,
+                                   moe_rank_cost=args.moe_rank_cost,
+                                   ep_hardware=instance.get("ep_hardware"))
+                    note_batch(instance_id, new_req, counters_before)   # record it for --iteration-output
                     generate_graph(new_req, instance["hardware"], instance["num_npus"], node_id,
                                    instance_id, inst2npu_mapping[instance_id],
                                    inst_cfg["enable_local_offloading"],
@@ -1024,6 +1324,8 @@ def main():
 
     # check all scheduled requests in astra-sim are well done
     controller.check_end(p)
+    if iteration_file is not None:
+        iteration_file.close()               # flush the per-iteration CSV to disk
 
     # calcuate prefix caching metrics
     total_requested_tokens = 0
@@ -1076,6 +1378,25 @@ def main():
     print_markup(f"Total token throughput (tok/s):                                     {(total_prompt + total_gen)/total_latency:.2f}")
     print_markup(f"Throughput per {log_interval:g} sec (\\[prompt_throughput], \\[gen_throughput]): {throughput}")
     print_rule()
+    # New summary block, printed only when some expert state could change during the run
+    if any(not pl.is_static for pl in shared_placements.values()):
+        print_rule("[sim.tagline]Expert Placement Results[/]")
+        for key, pl in shared_placements.items():   # one block per instance or DP group
+            print_markup(f"{key}: experts moved {pl.total_moves} ({pl.moved_bytes / GB_TO_BYTE:.2f} GB "
+                         f"charged), decision time (ms) {pl.total_decision_ns / 1e6:.3f}")
+            if pl.tracks_residency:              # memory pressure / precision tiers were active
+                # share of (token, expert) pairs served at REDUCED precision (accuracy proxy)
+                reduced = pl.reduced_pairs / pl.total_pairs * 100 if pl.total_pairs else 0.0
+                print_markup(f"{key}: expert misses {pl.misses}, fetched {pl.fetched_bytes / GB_TO_BYTE:.2f} GB, "
+                             f"evictions {pl.evictions}, pairs at reduced precision (%) {reduced:.2f}")
+            if pl.prefetch_policy != 'NONE':
+                # share of prefetched experts that were then actually used
+                useful = pl.useful_prefetches / pl.prefetches * 100 if pl.prefetches else 0.0
+                print_markup(f"{key}: prefetched {pl.prefetches} experts "
+                             f"({pl.prefetched_bytes / GB_TO_BYTE:.2f} GB), used (%) {useful:.2f}")
+            for line in pl.extra_summary():      # policy-specific lines (e.g. DSA)
+                print_markup(f"{key}: {line}")
+        print_rule()
     if any_prefix_caching:
         print_rule("[sim.tagline]Prefix Caching Results[/]")
         print_markup(f"Total requested prompt tokens:                                      {total_requested_tokens}")
